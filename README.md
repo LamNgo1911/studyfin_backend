@@ -113,6 +113,10 @@ User profile management – CRUD operations (in development).
 
 University data management (in development).
 
+### Programs
+
+University programs management
+
 ## License
 
 This project is private and unlicensed.
