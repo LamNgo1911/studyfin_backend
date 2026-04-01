@@ -1,0 +1,116 @@
+erDiagram
+    %% User Authentication
+    User {
+        string id PK
+        string email UK
+        string passwordHash
+        string firstName
+        string lastName
+        timestamp createdAt
+        timestamp updatedAt
+        timestamp emailVerifiedAt
+    }
+
+    Auth {
+        string id PK
+        string userId FK
+        string refreshToken
+        timestamp createdAt
+        timestamp expiresAt
+    }
+
+    User ||--o| Auth : "has"
+
+    %% Universities and Institutions
+    University {
+        string id PK
+        string oid UK
+        string name
+        string description
+        string logoUrl
+        string type
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    Location {
+        string id PK
+        string universityId FK
+        string code
+        string name
+        string address
+        string city
+        string country
+    }
+
+    Language {
+        string id PK
+        string universityId FK
+        string code
+        string name
+    }
+
+    University ||--o{ Location : "has"
+    University ||--o{ Language : "offers"
+
+    %% Programs
+    Program {
+        string id PK
+        string universityId FK
+        string name
+        string description
+        string degreeType
+        string fieldOfStudy
+        string language
+        int durationYears
+        string level
+        string academicTerm
+        decimal tuitionFee
+        string currency
+        boolean isDegreeProgramme
+        boolean isNonDegree
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    University ||--o{ Program : "offers"
+
+    %% Mock Tests
+    MockTest {
+        string id PK
+        string userId FK
+        string programId FK
+        int score
+        int maxScore
+        int timeTakenMinutes
+        timestamp completedAt
+        string status
+        timestamp createdAt
+    }
+
+    User ||--o{ MockTest : "takes"
+    Program ||--o{ MockTest : "for"
+
+    %% User Programs (saved/favorited)
+    UserProgram {
+        string id PK
+        string userId FK
+        string programId FK
+        string status
+        timestamp createdAt
+    }
+
+    User ||--o{ UserProgram : "saves"
+    Program ||--o{ UserProgram : "saved_in"
+
+    %% User University (saved/favorited)
+    UserUniversity {
+        string id PK
+        string userId FK
+        string universityId FK
+        string notes
+        timestamp createdAt
+    }
+
+    User ||--o{ UserUniversity : "saves"
+    University ||--o{ UserUniversity : "saved_in"
