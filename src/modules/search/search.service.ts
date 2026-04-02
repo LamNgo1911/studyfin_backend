@@ -131,7 +131,7 @@ export class SearchService {
       nqfLevel: p.nqfLevel,
       fieldOfStudy: p.fieldOfStudy,
       degreeTitles: p.degreeTitles,
-      implementations: p.implementations,
+      implementations: this.cleanImplementations(p.implementations),
       providers: p.universities.map((pu) => ({
         oid: pu.university.oid,
         name: pu.university.name,
@@ -143,6 +143,31 @@ export class SearchService {
     }));
 
     return { total, page, size, hits };
+  }
+
+  private cleanImplementations(raw: any): any[] | null {
+    if (!Array.isArray(raw)) return null;
+    // Handle both old (raw API shape) and new (already resolved) formats
+    const result = raw
+      .filter((t: any) => {
+        // Already resolved: has string name
+        if (typeof t.name === 'string') return true;
+        // Raw API shape: must have English nimi
+        return t.nimi?.en;
+      })
+      .map((t: any) => {
+        if (typeof t.name === 'string') return t; // already clean
+        return {
+          oid: t.oid,
+          name: t.nimi?.en ?? t.nimi?.fi ?? '',
+          providers: (t.tarjoajat ?? []).map((p: any) => ({
+            oid: p.oid,
+            name: p.nimi?.en ?? p.nimi?.fi ?? '',
+            municipality: p.paikkakunta?.nimi?.en ?? p.paikkakunta?.nimi?.fi ?? '',
+          })),
+        };
+      });
+    return result.length > 0 ? result : null;
   }
 
   private mapInstitution(hit: any, lng: string): InstitutionDto {

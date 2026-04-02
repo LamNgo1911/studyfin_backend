@@ -346,7 +346,11 @@ export class SyncService {
     resolveLang: (obj: any) => string,
   ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
     if (!Array.isArray(toteutukset)) return Prisma.JsonNull;
-    return toteutukset.map((t: any) => ({
+    const englishOnly = toteutukset.filter(
+      (t: any) => t.nimi?.en,
+    );
+    if (englishOnly.length === 0) return Prisma.JsonNull;
+    return englishOnly.map((t: any) => ({
       oid: t.oid,
       name: resolveLang(t.nimi),
       providers: (t.tarjoajat ?? []).map((p: any) => ({
