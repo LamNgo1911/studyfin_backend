@@ -7,8 +7,7 @@ import {
   InstitutionDto,
 } from './dto/search-response.dto';
 import { PrismaService } from '../../providers/prisma.service';
-
-const OPINTOPOLKU_BASE = 'https://opintopolku.fi/konfo-backend';
+import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config.js';
 
 @Injectable()
 export class SearchService {
