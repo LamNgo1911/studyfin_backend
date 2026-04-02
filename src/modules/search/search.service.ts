@@ -7,7 +7,7 @@ import {
   InstitutionDto,
 } from './dto/search-response.dto';
 import { PrismaService } from '../../providers/prisma.service';
-import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config.js';
+import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config';
 
 @Injectable()
 export class SearchService {

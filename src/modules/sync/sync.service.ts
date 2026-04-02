@@ -3,7 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../../providers/prisma.service';
-import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config.js';
+import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config';
 
 const PAGE_SIZE = 100;
 const EDUCATION_TYPES = 'yo,amk,amm';

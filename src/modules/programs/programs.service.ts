@@ -1,7 +1,7 @@
 import { Injectable, BadGatewayException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config.js';
+import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config';
 
 @Injectable()
 export class ProgramsService {
