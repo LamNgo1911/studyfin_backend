@@ -244,6 +244,8 @@ export class SyncService {
       .map((t: any) => resolveLang(t.nimi))
       .filter(Boolean);
 
+    const teachingLanguages: string[] = detail.kielivalinta ?? [];
+
     const eqfLevel: string | null =
       (detail.eqf ?? [])[0]?.koodiUri ?? null;
     const nqfLevel: string | null =
@@ -268,6 +270,7 @@ export class SyncService {
         nqfLevel,
         fieldOfStudy,
         degreeTitles,
+        teachingLanguages,
         implementations: this.resolveImplementations(
           detail.toteutukset,
           resolveLang,
@@ -288,6 +291,7 @@ export class SyncService {
         nqfLevel,
         fieldOfStudy,
         degreeTitles,
+        teachingLanguages,
         implementations: this.resolveImplementations(
           detail.toteutukset,
           resolveLang,

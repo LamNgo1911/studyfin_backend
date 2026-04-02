@@ -60,7 +60,8 @@ model Program {
   nqfLevel        String? // "nqf_8"
   fieldOfStudy    String? // first koulutusala name (English)
   degreeTitles    String[] // tutkintonimike names (English)
-  implementations Json? // raw toteutukset array stored as-is
+  teachingLanguages String[] // kielivalinta e.g. ["en", "fi"]
+  implementations Json? // resolved toteutukset (English only)
   syncedAt        DateTime
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

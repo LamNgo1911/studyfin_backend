@@ -131,6 +131,7 @@ export class SearchService {
       nqfLevel: p.nqfLevel,
       fieldOfStudy: p.fieldOfStudy,
       degreeTitles: p.degreeTitles,
+      teachingLanguages: p.teachingLanguages,
       implementations: this.cleanImplementations(p.implementations),
       providers: p.universities.map((pu) => ({
         oid: pu.university.oid,
