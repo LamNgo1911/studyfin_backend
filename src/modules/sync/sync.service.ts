@@ -4,6 +4,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../../providers/prisma.service';
 import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config';
+import { Prisma } from '../../../generated/prisma';
 
 const PAGE_SIZE = 100;
 const EDUCATION_TYPES = 'yo,amk,amm';
@@ -267,7 +268,10 @@ export class SyncService {
         nqfLevel,
         fieldOfStudy,
         degreeTitles,
-        implementations: detail.toteutukset ?? null,
+        implementations: this.resolveImplementations(
+          detail.toteutukset,
+          resolveLang,
+        ),
         syncedAt,
       },
       update: {
@@ -284,7 +288,10 @@ export class SyncService {
         nqfLevel,
         fieldOfStudy,
         degreeTitles,
-        implementations: detail.toteutukset ?? null,
+        implementations: this.resolveImplementations(
+          detail.toteutukset,
+          resolveLang,
+        ),
         syncedAt,
       },
     });
@@ -332,6 +339,22 @@ export class SyncService {
         });
       }
     }
+  }
+
+  private resolveImplementations(
+    toteutukset: any[] | null | undefined,
+    resolveLang: (obj: any) => string,
+  ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+    if (!Array.isArray(toteutukset)) return Prisma.JsonNull;
+    return toteutukset.map((t: any) => ({
+      oid: t.oid,
+      name: resolveLang(t.nimi),
+      providers: (t.tarjoajat ?? []).map((p: any) => ({
+        oid: p.oid,
+        name: resolveLang(p.nimi),
+        municipality: resolveLang(p.paikkakunta?.nimi),
+      })),
+    }));
   }
 
   private isEnglishTaught(data: any): boolean {

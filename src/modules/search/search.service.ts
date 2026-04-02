@@ -68,7 +68,7 @@ export class SearchService {
         ? { name: { contains: q, mode: 'insensitive' as const } }
         : {};
 
-      const [total, hits] = await Promise.all([
+      const [total, rows] = await Promise.all([
         this.prisma.university.count({ where }),
         this.prisma.university.findMany({
           where,
@@ -79,6 +79,19 @@ export class SearchService {
         }),
       ]);
 
+      const hits = rows.map((u) => ({
+        oid: u.oid,
+        name: u.name,
+        description: u.description,
+        logoUrl: u.logoUrl,
+        type: u.type,
+        municipality: u.municipality,
+        website: u.website,
+        email: u.email,
+        studentCount: u.studentCount,
+        locations: u.locations.map((l) => ({ code: l.code, name: l.name })),
+      }));
+
       return { total, page, size, hits };
     }
 
@@ -87,7 +100,7 @@ export class SearchService {
       ? { name: { contains: q, mode: 'insensitive' as const } }
       : {};
 
-    const [total, hits] = await Promise.all([
+    const [total, rows] = await Promise.all([
       this.prisma.program.count({ where }),
       this.prisma.program.findMany({
         where,
@@ -101,6 +114,33 @@ export class SearchService {
         orderBy: { name: 'asc' },
       }),
     ]);
+
+    const hits = rows.map((p) => ({
+      oid: p.oid,
+      name: p.name,
+      description: p.description,
+      type: p.type,
+      typePath: p.typePath,
+      isDegree: p.isDegree,
+      imageUrl: p.imageUrl,
+      credits: {
+        amount: p.creditsAmount,
+        unit: p.creditsUnit,
+      },
+      eqfLevel: p.eqfLevel,
+      nqfLevel: p.nqfLevel,
+      fieldOfStudy: p.fieldOfStudy,
+      degreeTitles: p.degreeTitles,
+      implementations: p.implementations,
+      providers: p.universities.map((pu) => ({
+        oid: pu.university.oid,
+        name: pu.university.name,
+        locations: pu.university.locations.map((l) => ({
+          code: l.code,
+          name: l.name,
+        })),
+      })),
+    }));
 
     return { total, page, size, hits };
   }
