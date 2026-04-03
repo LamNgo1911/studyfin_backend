@@ -3,23 +3,20 @@ export class LocationDto {
   name: string;
 }
 
-export class ProgramCountDto {
-  total: number;
-  degreeProgrammes: number;
-  nonDegree: number;
-}
-
 export class InstitutionDto {
   oid: string;
   name: string;
-  description: string;
-  logoUrl: string;
+  description: string | null;
+  logoUrl: string | null;
+  type: string;
+  municipality: string | null;
+  website: string | null;
+  email: string | null;
+  studentCount: number | null;
   locations: LocationDto[];
-  languages: string[];
-  programCount: ProgramCountDto;
 }
 
-export class SearchResponseDto {
+export class InstitutionSearchResponseDto {
   total: number;
   page: number;
   size: number;

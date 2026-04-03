@@ -1,7 +1,7 @@
 import { Controller, Get, Query, ValidationPipe } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { SearchQueryDto, DbSearchQueryDto } from './dto/search-query.dto';
-import { SearchResponseDto } from './dto/search-response.dto';
+import { InstitutionSearchResponseDto } from './dto/search-response.dto';
 
 @Controller('search')
 export class SearchController {
@@ -11,7 +11,7 @@ export class SearchController {
   searchInstitutions(
     @Query(new ValidationPipe({ transform: true, whitelist: true }))
     query: SearchQueryDto,
-  ): Promise<SearchResponseDto> {
+  ): Promise<InstitutionSearchResponseDto> {
     return this.searchService.searchInstitutions(query);
   }
 

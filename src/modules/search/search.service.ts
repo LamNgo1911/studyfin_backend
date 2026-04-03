@@ -1,55 +1,51 @@
-import { Injectable, BadGatewayException } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import { Injectable } from '@nestjs/common';
 import { SearchQueryDto, DbSearchQueryDto } from './dto/search-query.dto';
 import {
-  SearchResponseDto,
   InstitutionDto,
+  InstitutionSearchResponseDto,
 } from './dto/search-response.dto';
 import { PrismaService } from '../../providers/prisma.service';
-import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config';
 
 @Injectable()
 export class SearchService {
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async searchInstitutions(query: SearchQueryDto): Promise<SearchResponseDto> {
-    const lng = query.lng ?? 'en';
+  async searchInstitutions(
+    query: SearchQueryDto,
+  ): Promise<InstitutionSearchResponseDto> {
+    const keyword = query.keyword ?? '';
     const size = query.size ?? 20;
     const page = query.page ?? 0;
 
-    const params: Record<string, string | number> = {
-      koulutustyyppi: 'yo,amk',
-      lng,
-      size,
-      page,
-    };
+    const where = keyword
+      ? { name: { contains: keyword, mode: 'insensitive' as const } }
+      : {};
 
-    if (query.keyword) {
-      params.keyword = query.keyword;
-    }
+    const [total, rows] = await Promise.all([
+      this.prisma.university.count({ where }),
+      this.prisma.university.findMany({
+        where,
+        include: { locations: true },
+        skip: page * size,
+        take: size,
+        orderBy: { name: 'asc' },
+      }),
+    ]);
 
-    let data: any;
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(`${OPINTOPOLKU_BASE}/search/oppilaitokset`, {
-          params,
-        }),
-      );
-      data = response.data;
-    } catch {
-      throw new BadGatewayException('Upstream Opintopolku API is unreachable');
-    }
+    const hits: InstitutionDto[] = rows.map((u) => ({
+      oid: u.oid,
+      name: u.name,
+      description: u.description,
+      logoUrl: u.logoUrl,
+      type: u.type,
+      municipality: u.municipality,
+      website: u.website,
+      email: u.email,
+      studentCount: u.studentCount,
+      locations: u.locations.map((l) => ({ code: l.code, name: l.name })),
+    }));
 
-    return {
-      total: data.total ?? 0,
-      page,
-      size,
-      hits: (data.hits ?? []).map((hit: any) => this.mapInstitution(hit, lng)),
-    };
+    return { total, page, size, hits };
   }
 
   async search(query: DbSearchQueryDto): Promise<{
@@ -169,28 +165,5 @@ export class SearchService {
         };
       });
     return result.length > 0 ? result : null;
-  }
-
-  private mapInstitution(hit: any, lng: string): InstitutionDto {
-    const name = hit.nimi?.[lng] ?? hit.nimi?.fi ?? '';
-    const description = hit.kuvaus?.[lng] ?? hit.kuvaus?.fi ?? '';
-    const counts = hit.koulutusohjelmatLkm ?? {};
-
-    return {
-      oid: hit.oid ?? '',
-      name,
-      description,
-      logoUrl: hit.logo ?? '',
-      locations: (hit.paikkakunnat ?? []).map((p: any) => ({
-        code: p.koodiUri ?? '',
-        name: p.nimi?.[lng] ?? p.nimi?.fi ?? '',
-      })),
-      languages: hit.kielivalinta ?? [],
-      programCount: {
-        total: counts.kaikki ?? 0,
-        degreeProgrammes: counts.tutkintoonJohtavat ?? 0,
-        nonDegree: counts.eiTutkintoonJohtavat ?? 0,
-      },
-    };
   }
 }

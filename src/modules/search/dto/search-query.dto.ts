@@ -7,6 +7,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+
 import { Type } from 'class-transformer';
 
 export class SearchQueryDto {
@@ -14,10 +15,6 @@ export class SearchQueryDto {
   @IsString()
   @MinLength(3)
   keyword?: string;
-
-  @IsOptional()
-  @IsIn(['fi', 'sv', 'en'])
-  lng?: string = 'en';
 
   @IsOptional()
   @Type(() => Number)
