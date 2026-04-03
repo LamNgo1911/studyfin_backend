@@ -7,7 +7,6 @@
 - **Runtime:** Node.js · TypeScript
 - **Framework:** [NestJS](https://nestjs.com/) v11
 - **ORM:** [Prisma](https://www.prisma.io/) v7 (PostgreSQL)
-- **HTTP Client:** Axios (via `@nestjs/axios`)
 - **Validation:** class-validator · class-transformer
 - **Infrastructure:** Docker Compose (PostgreSQL 16, Redis 7)
 - **Testing:** Jest · Supertest
@@ -26,11 +25,12 @@ src/
 │   └── utils/
 ├── config/                # App configuration
 ├── modules/
-│   ├── auth/              # Authentication
-│   ├── users/             # User management
+│   ├── auth/              # Authentication (scaffold)
+│   ├── users/             # User management (scaffold)
 │   ├── universities/      # University data
-│   ├── search/            # Institution search (Opintopolku API)
-│   ├── programs/          # Study programs (scaffold)
+│   ├── search/            # Institution & program search (local DB)
+│   ├── programs/          # Study programs
+│   ├── sync/              # DB sync from Opintopolku API
 │   └── mock-tests/        # Mock test data (scaffold)
 ├── providers/             # External providers
 └── main.ts
@@ -95,11 +95,72 @@ The server starts at **http://localhost:3000** by default.
 | `npm run test:cov`  | Run tests with coverage           |
 | `npm run test:e2e`  | Run end-to-end tests              |
 
+## API Routes
+
+### Health
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Health check |
+
+### Universities
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/universities` | Paginated university list |
+| `GET` | `/universities/:oid` | University by OID |
+| `GET` | `/universities/:oid/programs` | Programs for a university |
+
+### Programs
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/programs` | List programs |
+| `GET` | `/programs/:oid` | Program by OID |
+
+### Search
+
+Queries the local database. Both endpoints support `keyword`, `size`, and `page` query params.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/search/institutions` | Search universities by keyword |
+| `GET` | `/search` | Search institutions or programs (`type=institutions\|programs`, `q`) |
+
+**`GET /search/institutions` response shape:**
+```json
+{
+  "total": 50,
+  "page": 0,
+  "size": 20,
+  "hits": [
+    {
+      "oid": "1.2.246.562.10.56753942459",
+      "name": "Aalto University",
+      "type": "yo",
+      "municipality": "Helsinki",
+      "website": "https://aalto.fi",
+      "email": "info@aalto.fi",
+      "studentCount": 15000,
+      "description": "...",
+      "logoUrl": "...",
+      "locations": [{ "code": "kunta_091", "name": "Helsinki" }]
+    }
+  ]
+}
+```
+
+### Sync
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/sync/run` | Sync universities and programs from Opintopolku into the DB (202 Accepted, runs in background) |
+
 ## API Modules
 
 ### Search
 
-Proxies the [Opintopolku](https://opintopolku.fi) API to search Finnish educational institutions. Supports keyword filtering, pagination, and multi-language results (Finnish, Swedish, English).
+Queries the local PostgreSQL database. No longer proxies the Opintopolku API directly — data is populated via `POST /sync/run`.
 
 ### Auth
 
