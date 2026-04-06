@@ -108,7 +108,7 @@ The server starts at **http://localhost:3000** by default.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/universities` | Paginated university list |
-| `GET` | `/universities/:oid` | University by OID |
+| `GET` | `/universities/:oid` | University by OID (`lng` query param supported) |
 | `GET` | `/universities/:oid/programs` | Programs for a university |
 
 ### Programs
@@ -116,16 +116,27 @@ The server starts at **http://localhost:3000** by default.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/programs` | List programs |
-| `GET` | `/programs/:oid` | Program by OID |
+| `GET` | `/programs/:oid` | Program by OID (`lng` query param supported) |
 
 ### Search
 
-Queries the local database. Both endpoints support `keyword`, `size`, and `page` query params.
+Queries the local database.
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/search/institutions` | Search universities by keyword |
-| `GET` | `/search` | Search institutions or programs (`type=institutions\|programs`, `q`) |
+| `GET` | `/search` | Search institutions or programs |
+
+**Query parameters for `/search/institutions`:**
+- `keyword` — search term (min 3 chars)
+- `size` — results per page (1–50, default: 20)
+- `page` — page number (0-indexed, default: 0)
+
+**Query parameters for `/search`:**
+- `q` — search term
+- `type` — `institutions` or `programs` (default: `programs`)
+- `size` — results per page (1–100, default: 20)
+- `page` — page number (0-indexed, default: 0)
 
 **`GET /search/institutions` response shape:**
 ```json
@@ -177,6 +188,17 @@ University data management (in development).
 ### Programs
 
 University programs management
+
+## Database
+
+Prisma with PostgreSQL. The schema (`prisma/schema.prisma`) includes models for:
+- `University`, `UniversityLocation` — institution data
+- `Program`, `ProgramUniversity` — study programs and their university associations
+- `User`, `Auth` — user accounts and refresh token sessions
+- `UserProgram`, `UserUniversity` — user saved items
+- `MockTest` — practice test records
+
+Prisma client is generated to `generated/prisma` — import from there, not `@prisma/client`.
 
 ## License
 
