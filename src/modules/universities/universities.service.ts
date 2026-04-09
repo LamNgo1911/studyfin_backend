@@ -29,13 +29,15 @@ export class UniversitiesService {
           params,
         }),
       );
-      
+
       const data = response.data;
       return {
         total: data.total ?? 0,
         page,
         size,
-        hits: (data.hits ?? []).map((hit: any) => this.mapInstitution(hit, lng)),
+        hits: (data.hits ?? []).map((hit: any) =>
+          this.mapInstitution(hit, lng),
+        ),
       };
     } catch {
       throw new BadGatewayException('Upstream Opintopolku API is unreachable');
@@ -45,11 +47,13 @@ export class UniversitiesService {
   async findOne(oid: string, lng: string = 'en') {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${OPINTOPOLKU_BASE}/oppilaitos/${oid}`)
+        this.httpService.get(`${OPINTOPOLKU_BASE}/oppilaitos/${oid}`),
       );
       return this.mapDetailedInstitution(response.data, lng);
     } catch {
-      throw new BadGatewayException(`Upstream Opintopolku API is unreachable for OID: ${oid}`);
+      throw new BadGatewayException(
+        `Upstream Opintopolku API is unreachable for OID: ${oid}`,
+      );
     }
   }
 
@@ -81,7 +85,9 @@ export class UniversitiesService {
         oid: osa.oid,
         name: resolveLang(osa.nimi),
         status: osa.status,
-        teachingLanguages: (osa.opetuskieli ?? []).map((k: any) => resolveLang(k.nimi)),
+        teachingLanguages: (osa.opetuskieli ?? []).map((k: any) =>
+          resolveLang(k.nimi),
+        ),
       })),
     };
   }
@@ -109,9 +115,9 @@ export class UniversitiesService {
       const response = await firstValueFrom(
         this.httpService.get(`${OPINTOPOLKU_BASE}/search/koulutukset`, {
           params,
-        })
+        }),
       );
-      
+
       const data = response.data;
       return {
         total: data.total ?? 0,
@@ -120,7 +126,9 @@ export class UniversitiesService {
         hits: (data.hits ?? []).map((hit: any) => this.mapProgram(hit, lng)),
       };
     } catch {
-      throw new BadGatewayException(`Upstream Opintopolku API is unreachable for programs of OID: ${oid}`);
+      throw new BadGatewayException(
+        `Upstream Opintopolku API is unreachable for programs of OID: ${oid}`,
+      );
     }
   }
 
@@ -135,10 +143,13 @@ export class UniversitiesService {
       name: resolveLang(hit.nimi),
       description: resolveLang(hit.kuvaus),
       type: hit.koulutustyyppi,
-      credits: hit.opintojenLaajuusNumero ?? hit.opintojenLaajuusNumeroMax ?? null,
+      credits:
+        hit.opintojenLaajuusNumero ?? hit.opintojenLaajuusNumeroMax ?? null,
       image: hit.teemakuva ?? '',
       isOpenUniversity: !!hit.isAvoinKorkeakoulutus,
-      providers: hit.toteutustenTarjoajat?.nimi ? [resolveLang(hit.toteutustenTarjoajat?.nimi)] : [],
+      providers: hit.toteutustenTarjoajat?.nimi
+        ? [resolveLang(hit.toteutustenTarjoajat?.nimi)]
+        : [],
     };
   }
 
@@ -165,4 +176,3 @@ export class UniversitiesService {
     };
   }
 }
-

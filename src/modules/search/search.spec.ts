@@ -29,10 +29,7 @@ describe('SearchService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SearchService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [SearchService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get(SearchService);
@@ -172,7 +169,9 @@ describe('SearchService', () => {
       ]);
 
       const findManyArgs = prisma.program.findMany.mock.calls[0][0];
-      expect(findManyArgs.include.universities.include.university.include.locations).toBe(true);
+      expect(
+        findManyArgs.include.universities.include.university.include.locations,
+      ).toBe(true);
     });
   });
 });

@@ -51,7 +51,8 @@ export class ProgramsService {
       name: resolveLang(hit.nimi),
       description: resolveLang(hit.kuvaus),
       type: hit.koulutustyyppi,
-      credits: hit.opintojenLaajuusNumero ?? hit.opintojenLaajuusNumeroMax ?? null,
+      credits:
+        hit.opintojenLaajuusNumero ?? hit.opintojenLaajuusNumeroMax ?? null,
       image: hit.teemakuva ?? '',
       isOpenUniversity: !!hit.isAvoinKorkeakoulutus,
       providers: hit.toteutustenTarjoajat?.nimi
@@ -63,11 +64,13 @@ export class ProgramsService {
   async findOne(oid: string, lng: string = 'en') {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${OPINTOPOLKU_BASE}/koulutus/${oid}`)
+        this.httpService.get(`${OPINTOPOLKU_BASE}/koulutus/${oid}`),
       );
       return this.mapProgramDetails(response.data, lng);
     } catch {
-      throw new BadGatewayException(`Upstream Opintopolku API is unreachable for Program OID: ${oid}`);
+      throw new BadGatewayException(
+        `Upstream Opintopolku API is unreachable for Program OID: ${oid}`,
+      );
     }
   }
 
@@ -93,8 +96,14 @@ export class ProgramsService {
         unit: resolveLang(metadata.opintojenLaajuusyksikko?.nimi) || null,
       },
       qualificationLevel: {
-        eqf: (data.eqf ?? []).map((e: any) => ({ code: e.koodiUri, name: resolveLang(e.nimi) })),
-        nqf: (data.nqf ?? []).map((e: any) => ({ code: e.koodiUri, name: resolveLang(e.nimi) })),
+        eqf: (data.eqf ?? []).map((e: any) => ({
+          code: e.koodiUri,
+          name: resolveLang(e.nimi),
+        })),
+        nqf: (data.nqf ?? []).map((e: any) => ({
+          code: e.koodiUri,
+          name: resolveLang(e.nimi),
+        })),
       },
       degreeTitles: (metadata.tutkintonimike ?? []).map((t: any) => ({
         code: t.koodiUri,

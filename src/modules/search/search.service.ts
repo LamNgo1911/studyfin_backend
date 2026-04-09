@@ -160,7 +160,8 @@ export class SearchService {
           providers: (t.tarjoajat ?? []).map((p: any) => ({
             oid: p.oid,
             name: p.nimi?.en ?? p.nimi?.fi ?? '',
-            municipality: p.paikkakunta?.nimi?.en ?? p.paikkakunta?.nimi?.fi ?? '',
+            municipality:
+              p.paikkakunta?.nimi?.en ?? p.paikkakunta?.nimi?.fi ?? '',
           })),
         };
       });

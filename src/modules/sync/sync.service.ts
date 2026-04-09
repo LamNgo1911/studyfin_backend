@@ -232,9 +232,7 @@ export class SyncService {
     const metadata = detail.metadata ?? {};
     const name = resolveLang(detail.nimi) || oid;
     const type =
-      (detail.koulutustyyppi as string) ??
-      (hit.koulutustyyppi as string) ??
-      '';
+      (detail.koulutustyyppi as string) ?? (hit.koulutustyyppi as string) ?? '';
     const simpleType = this.resolveType(type, '');
 
     const fieldOfStudy =
@@ -246,10 +244,8 @@ export class SyncService {
 
     const teachingLanguages: string[] = detail.kielivalinta ?? [];
 
-    const eqfLevel: string | null =
-      (detail.eqf ?? [])[0]?.koodiUri ?? null;
-    const nqfLevel: string | null =
-      (detail.nqf ?? [])[0]?.koodiUri ?? null;
+    const eqfLevel: string | null = (detail.eqf ?? [])[0]?.koodiUri ?? null;
+    const nqfLevel: string | null = (detail.nqf ?? [])[0]?.koodiUri ?? null;
 
     const syncedAt = new Date();
 
@@ -350,9 +346,7 @@ export class SyncService {
     resolveLang: (obj: any) => string,
   ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
     if (!Array.isArray(toteutukset)) return Prisma.JsonNull;
-    const englishOnly = toteutukset.filter(
-      (t: any) => t.nimi?.en,
-    );
+    const englishOnly = toteutukset.filter((t: any) => t.nimi?.en);
     if (englishOnly.length === 0) return Prisma.JsonNull;
     return englishOnly.map((t: any) => ({
       oid: t.oid,
@@ -366,9 +360,7 @@ export class SyncService {
   }
 
   private isEnglishTaught(data: any): boolean {
-    return (
-      Array.isArray(data.kielivalinta) && data.kielivalinta.includes('en')
-    );
+    return Array.isArray(data.kielivalinta) && data.kielivalinta.includes('en');
   }
 
   private resolveType(type: string, oid: string): string {
