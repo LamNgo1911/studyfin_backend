@@ -25,7 +25,7 @@ src/
 │   └── utils/
 ├── config/                # App configuration
 ├── modules/
-│   ├── auth/              # Authentication (scaffold)
+│   ├── auth/              # JWT authentication
 │   ├── users/             # User management (scaffold)
 │   ├── universities/      # University data
 │   ├── search/            # Institution & program search (local DB)
@@ -161,6 +161,18 @@ Queries the local database.
 }
 ```
 
+### Auth
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/register` | Register a new user |
+| `POST` | `/auth/verify-email` | Verify email with token |
+| `POST` | `/auth/login` | Login and receive JWT tokens |
+| `POST` | `/auth/refresh` | Refresh access token |
+| `POST` | `/auth/forgot-password` | Request password reset email |
+| `POST` | `/auth/reset-password` | Reset password with token |
+| `GET` | `/auth/me` | Get current user profile (requires auth) |
+
 ### Sync
 
 | Method | Path | Description |
@@ -169,13 +181,13 @@ Queries the local database.
 
 ## API Modules
 
+### Auth
+
+JWT-based authentication with access and refresh tokens. Supports user registration, email verification, login, and password reset flows. Protected routes use the `JwtAuthGuard`.
+
 ### Search
 
 Queries the local PostgreSQL database. No longer proxies the Opintopolku API directly — data is populated via `POST /sync/run`.
-
-### Auth
-
-Handles user authentication (in development).
 
 ### Users
 
