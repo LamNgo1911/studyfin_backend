@@ -7,6 +7,7 @@ import { SearchModule } from './modules/search/search.module';
 import { UsersModule } from './modules/users/users.module';
 import { UniversitiesModule } from './modules/universities/universities.module';
 import { ProgramsModule } from './modules/programs/programs.module';
+import { MockTestsModule } from './modules/mock-tests/mock-tests.module';
 import { PrismaModule } from './providers/prisma.module';
 import { SyncModule } from './modules/sync/sync.module';
 
@@ -20,6 +21,7 @@ import { SyncModule } from './modules/sync/sync.module';
     UsersModule,
     UniversitiesModule,
     ProgramsModule,
+    MockTestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

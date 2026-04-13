@@ -148,16 +148,86 @@ model UserUniversity {
 
 // ─── Mock Tests ───────────────────────────────────────────────────────────────
 
+model TestTemplate {
+  id              String     @id @default(cuid())
+  title           String
+  description     String?
+  subject         String     // "math", "language_en", "reading", "analytical"
+  durationMinutes Int
+  isActive        Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  questions       Question[]
+  mockTests       MockTest[]
+
+  @@index([subject])
+  @@index([isActive])
+}
+
+model Question {
+  id          String           @id @default(cuid())
+  templateId  String
+  template    TestTemplate     @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  body        String
+  type        String           @default("multiple_choice")
+  points      Int              @default(1)
+  orderIndex  Int
+  explanation String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  options     AnswerOption[]
+  userAnswers MockTestAnswer[]
+
+  @@index([templateId])
+}
+
+model AnswerOption {
+  id          String           @id @default(cuid())
+  questionId  String
+  question    Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  label       String           // "A", "B", "C", "D"
+  body        String
+  isCorrect   Boolean          @default(false)
+  orderIndex  Int
+  createdAt   DateTime         @default(now())
+  userAnswers MockTestAnswer[]
+
+  @@index([questionId])
+}
+
 model MockTest {
-  id               String    @id @default(cuid())
+  id               String           @id @default(cuid())
   userId           String
-  programId        String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  program          Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  programId        String?
+  templateId       String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program          Program?         @relation(fields: [programId], references: [id], onDelete: Cascade)
+  template         TestTemplate     @relation(fields: [templateId], references: [id])
   score            Int?
   maxScore         Int?
   timeTakenMinutes Int?
-  status           String
+  status           String           @default("in_progress")
   completedAt      DateTime?
-  createdAt        DateTime  @default(now())
+  createdAt        DateTime         @default(now())
+  answers          MockTestAnswer[]
+
+  @@index([userId])
+  @@index([templateId])
+  @@index([status])
+}
+
+model MockTestAnswer {
+  id               String        @id @default(cuid())
+  mockTestId       String
+  mockTest         MockTest      @relation(fields: [mockTestId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question      @relation(fields: [questionId], references: [id])
+  selectedOptionId String?
+  selectedOption   AnswerOption? @relation(fields: [selectedOptionId], references: [id])
+  isCorrect        Boolean?
+  pointsAwarded    Int           @default(0)
+  createdAt        DateTime      @default(now())
+
+  @@unique([mockTestId, questionId])
+  @@index([mockTestId])
 }
