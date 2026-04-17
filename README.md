@@ -31,7 +31,7 @@ src/
 │   ├── search/            # Institution & program search (local DB)
 │   ├── programs/          # Study programs
 │   ├── sync/              # DB sync from Opintopolku API
-│   └── mock-tests/        # Mock test data (scaffold)
+│   └── mock-tests/        # UAS entrance exam practice tests
 ├── providers/             # External providers
 └── main.ts
 ```
@@ -179,6 +179,29 @@ Queries the local database.
 |--------|------|-------------|
 | `POST` | `/sync/run` | Sync universities and programs from Opintopolku into the DB (202 Accepted, runs in background) |
 
+### Mock Tests
+
+Practice tests for UAS (Universities of Applied Sciences) entrance exams.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/mock-tests/templates` | List available test templates |
+| `GET` | `/mock-tests/templates/:id` | Get a specific template |
+| `POST` | `/mock-tests` | Start a new test attempt (requires auth) |
+| `GET` | `/mock-tests/history` | Get user's test history (requires auth) |
+| `GET` | `/mock-tests/:id` | Get a specific attempt (requires auth) |
+| `POST` | `/mock-tests/:id/submit` | Submit answers for an attempt (requires auth) |
+
+**Query parameters for `/mock-tests/templates`:**
+- `subject` — filter by subject: `math`, `language_en`, `reading`, `analytical`
+- `size` — results per page (1–50, default: 20)
+- `page` — page number (0-indexed, default: 0)
+
+**Query parameters for `/mock-tests/history`:**
+- `status` — filter by status: `in_progress`, `completed`
+- `size` — results per page (1–50, default: 20)
+- `page` — page number (0-indexed, default: 0)
+
 ## API Modules
 
 ### Auth
@@ -200,6 +223,10 @@ University data management (in development).
 ### Programs
 
 University programs management
+
+### Mock Tests
+
+UAS entrance exam practice. Users can browse test templates, start timed attempts, and submit answers for scoring. Supports subjects: math, language (English), reading comprehension, and analytical reasoning.
 
 ## Database
 
