@@ -1,0 +1,92 @@
+# Roadmap: StudyFin Backend
+
+## Overview
+
+This milestone extends an already-working NestJS 11 + Prisma + PostgreSQL system into a production-ready API for international students discovering English-taught Finnish higher education programs. The work proceeds in five phases: first establishing the RBAC foundation and English-only DB state that everything else depends on, then retiring the live Opintopolku proxy in favor of fast DB-backed reads, then building the A-Z guidance content system that is the primary product differentiator, then exposing user profile and program-shortlisting capabilities with mock test access gating, and finally completing the platform with unified search and infrastructure hardening.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: RBAC Foundation** - Add role system, RBAC guards, and English-only DB cleanup
+- [ ] **Phase 2: DB-Backed APIs** - Retire live Opintopolku proxy; serve all data from local PostgreSQL
+- [ ] **Phase 3: Guidance Content** - Build A-Z guidance content model, admin CRUD, and public read endpoints
+- [ ] **Phase 4: User Features** - Expose user profile, program shortlisting, and mock test access gating
+- [ ] **Phase 5: Search and Infrastructure** - Unified search, Redis caching, rate limiting, and Swagger docs
+
+## Phase Details
+
+### Phase 1: RBAC Foundation
+**Goal**: The platform has a two-role access control system (user/admin) and contains only English-taught programs
+**Depends on**: Nothing (first phase)
+**Requirements**: FOUND-01, FOUND-02, FOUND-03, FOUND-04, FOUND-05, FOUND-06, FOUND-07
+**Success Criteria** (what must be TRUE):
+  1. An authenticated request returns the caller's role from the database (not from the JWT payload)
+  2. A route decorated with `@Roles('admin')` returns 403 when called by a user with role "user"
+  3. A route decorated with `@Roles('admin')` returns 200 when called by a user with role "admin"
+  4. The programs table contains no programs where "en" is absent from teachingLanguages
+**Plans**: TBD
+
+### Phase 2: DB-Backed APIs
+**Goal**: All program and institution data is served from local PostgreSQL with no live calls to Opintopolku
+**Depends on**: Phase 1
+**Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05
+**Success Criteria** (what must be TRUE):
+  1. `GET /programs/:oid` returns a program record sourced from the local database, not from Opintopolku
+  2. `GET /universities/:oid` returns an institution record sourced from the local database, not from Opintopolku
+  3. Running two concurrent sync jobs does not produce duplicate-key errors or corrupt upsert results
+  4. A university's locations are never empty during a sync run (location update is atomic)
+**Plans**: TBD
+
+### Phase 3: Guidance Content
+**Goal**: Admins can create and update A-Z guidance content per program; any visitor can read it
+**Depends on**: Phase 1, Phase 2
+**Requirements**: GUID-01, GUID-02, GUID-03, GUID-04, GUID-05, GUID-06, GUID-07
+**Success Criteria** (what must be TRUE):
+  1. `GET /guidance/:programOid` returns structured sections (key, title, body, order) without authentication
+  2. `POST /guidance/:programOid` creates guidance when called by an admin; returns 403 for non-admin callers
+  3. `PATCH /guidance/:programOid` updates existing guidance sections when called by an admin
+  4. Posting guidance with a malformed section (missing required fields) returns a 400 validation error
+  5. `GET /programs/:oid` and `GET /universities/:oid` responses include a flag indicating whether guidance exists
+**UI hint**: no
+
+### Phase 4: User Features
+**Goal**: Authenticated users can manage their profile and saved programs; admins can control mock test access
+**Depends on**: Phase 1
+**Requirements**: USER-01, USER-02, USER-03, USER-04, USER-05, USER-06, USER-07, USER-08, USER-09
+**Success Criteria** (what must be TRUE):
+  1. `GET /users/me` returns the authenticated user's profile data
+  2. `PATCH /users/me` updates and returns the authenticated user's profile
+  3. A user can save, update status on, and remove a program from their shortlist via the `/users/me/programs` endpoints
+  4. `GET /users/me/programs` returns the authenticated user's full saved-program list
+  5. Attempting to start a mock test without `hasTestAccess` returns 403; an admin can grant or revoke that flag
+**UI hint**: no
+
+### Phase 5: Search and Infrastructure
+**Goal**: A unified search endpoint finds programs and institutions by relevance; the platform has caching, rate limiting, and API documentation
+**Depends on**: Phase 2
+**Requirements**: SRCH-01, SRCH-02, SRCH-03, SRCH-04, SRCH-05, SRCH-06, SRCH-07, SRCH-08
+**Success Criteria** (what must be TRUE):
+  1. `GET /search?q=engineering` returns a relevance-ranked list of matching programs and institutions
+  2. `GET /search?q=engineering&type=programs` returns only program results; `type=institutions` returns only institutions
+  3. Program list and search responses are served from Redis cache on repeat requests within the 24-hour TTL
+  4. Excessive requests to public and admin endpoints are rejected with 429 after the configured threshold
+  5. Swagger UI is accessible at `/api` and documents all key endpoints and their DTOs
+**UI hint**: no
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. RBAC Foundation | 0/TBD | Not started | - |
+| 2. DB-Backed APIs | 0/TBD | Not started | - |
+| 3. Guidance Content | 0/TBD | Not started | - |
+| 4. User Features | 0/TBD | Not started | - |
+| 5. Search and Infrastructure | 0/TBD | Not started | - |
