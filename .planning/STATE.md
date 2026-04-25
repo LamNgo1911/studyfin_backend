@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md - Role enum and CurrentUserData foundation
-last_updated: "2026-04-25T10:02:20.124Z"
+stopped_at: Completed 01-02-PLAN.md - Roles decorator, RolesGuard, and JwtStrategy role
+last_updated: "2026-04-25T10:16:31.256Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-25)
 ## Current Position
 
 Phase: 01 (RBAC Foundation) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-25
 
-Progress: [███░░░░░░░] 33%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [███░░░░░░░] 33%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 449 | 2 tasks | 2 files |
+| Phase 01-rbac-foundation P02 | 360 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - `@nestjs/cache-manager` v3+ requires `@keyv/redis` adapter — do NOT use `cache-manager-redis-store`
 - Role enum placed above the User model comment block in schema.prisma; role field positioned between lastName and emailVerifiedAt per D-01 ordering
 - role typed as string in CurrentUserData (not Prisma enum) so the decorator file does not import from generated/prisma across regenerations
+- Role read from DB on every authenticated request (not from JWT payload) — immediate revocation capability (FOUND-03)
+- Used Reflector.createDecorator<string[]>() for Roles decorator (NestJS 10+ typed API, not SetMetadata)
 
 ### Pending Todos
 
@@ -89,8 +92,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T10:02:20.100Z
-Stopped at: Completed 01-01-PLAN.md - Role enum and CurrentUserData foundation
+Last session: 2026-04-25T10:16:30.112Z
+Stopped at: Completed 01-02-PLAN.md - Roles decorator, RolesGuard, and JwtStrategy role
 Resume file: None
 
 **Planned Phase:** 1 (RBAC Foundation) — 3 plans — 2026-04-25T09:45:35.192Z
