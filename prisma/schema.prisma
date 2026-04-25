@@ -85,6 +85,11 @@ model ProgramUniversity {
   @@id([programId, universityId])
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 // ─── Users & Auth ────────────────────────────────────────────────────────────
 
 model User {
@@ -93,6 +98,7 @@ model User {
   passwordHash    String
   firstName       String?
   lastName        String?
+  role            Role      @default(USER)
   emailVerifiedAt DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

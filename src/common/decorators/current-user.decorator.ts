@@ -6,6 +6,7 @@ export interface CurrentUserData {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  role: string;
 }
 
 export const CurrentUser = createParamDecorator(
