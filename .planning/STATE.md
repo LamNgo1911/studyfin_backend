@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-04-25T09:14:33.123Z"
-last_activity: 2026-04-25 — Roadmap created (5 phases, 34 requirements mapped)
+status: executing
+stopped_at: Completed 01-01-PLAN.md - Role enum and CurrentUserData foundation
+last_updated: "2026-04-25T10:02:20.124Z"
+last_activity: 2026-04-25
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 3
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-25)
 
 **Core value:** International students can discover and search all English-taught higher education programs in Finland from a single, reliable source — and get step-by-step guidance on how to apply.
-**Current focus:** Phase 1 — RBAC Foundation
+**Current focus:** Phase 01 — RBAC Foundation
 
 ## Current Position
 
-Phase: 1 of 5 (RBAC Foundation)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-04-25 — Roadmap created (5 phases, 34 requirements mapped)
+Phase: 01 (RBAC Foundation) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-25
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P01 | 449 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,8 @@ Recent decisions affecting current work:
 - Role read from DB on every request (not in JWT) so mock test access revocation takes effect immediately
 - Guidance content stored in a separate table that SyncService never touches (prevents Opintopolku sync from overwriting editorial content)
 - `@nestjs/cache-manager` v3+ requires `@keyv/redis` adapter — do NOT use `cache-manager-redis-store`
+- Role enum placed above the User model comment block in schema.prisma; role field positioned between lastName and emailVerifiedAt per D-01 ordering
+- role typed as string in CurrentUserData (not Prisma enum) so the decorator file does not import from generated/prisma across regenerations
 
 ### Pending Todos
 
@@ -86,6 +89,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 1 context gathered
-Resume file: --resume-file
+Last session: 2026-04-25T10:02:20.100Z
+Stopped at: Completed 01-01-PLAN.md - Role enum and CurrentUserData foundation
+Resume file: None
+
+**Planned Phase:** 1 (RBAC Foundation) — 3 plans — 2026-04-25T09:45:35.192Z

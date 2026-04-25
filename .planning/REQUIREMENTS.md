@@ -9,10 +9,12 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Foundation (Phase 1)
 
-- [ ] **FOUND-01**: User model has `role` field (String, default "user") for two-level RBAC
+- [x] **FOUND-01
+**: User model has `role` field (String, default "user") for two-level RBAC
 - [ ] **FOUND-02**: User model has `hasTestAccess` boolean field for mock test monetization gating
 - [ ] **FOUND-03**: JWT strategy returns user `role` from database on every authenticated request
-- [ ] **FOUND-04**: `CurrentUserData` interface includes `role: string`
+- [x] **FOUND-04
+**: `CurrentUserData` interface includes `role: string`
 - [ ] **FOUND-05**: `@Roles()` decorator created using `Reflector.createDecorator` in common/decorators
 - [ ] **FOUND-06**: `RolesGuard` created in common/guards implementing `CanActivate`, composable with `JwtAuthGuard`
 - [ ] **FOUND-07**: English-only DB cleanup: delete all programs where `en` is not in `teachingLanguages`
