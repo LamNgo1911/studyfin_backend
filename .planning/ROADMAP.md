@@ -29,7 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. A route decorated with `@Roles('admin')` returns 403 when called by a user with role "user"
   3. A route decorated with `@Roles('admin')` returns 200 when called by a user with role "admin"
   4. The programs table contains no programs where "en" is absent from teachingLanguages
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Add Role enum + db push + CurrentUserData interface (Wave 1)
+- [ ] 01-02-PLAN.md — Create RolesGuard, Roles decorator, update JwtStrategy (Wave 2)
+- [ ] 01-03-PLAN.md — Admin seed script + English cleanup script + package.json wiring (Wave 2)
 
 ### Phase 2: DB-Backed APIs
 **Goal**: All program and institution data is served from local PostgreSQL with no live calls to Opintopolku
@@ -85,7 +90,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. RBAC Foundation | 0/TBD | Not started | - |
+| 1. RBAC Foundation | 0/3 | Not started | - |
 | 2. DB-Backed APIs | 0/TBD | Not started | - |
 | 3. Guidance Content | 0/TBD | Not started | - |
 | 4. User Features | 0/TBD | Not started | - |
