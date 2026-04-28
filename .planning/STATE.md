@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-02-PLAN.md - Roles decorator, RolesGuard, and JwtStrategy role
-last_updated: "2026-04-27T12:21:21.500Z"
+stopped_at: Completed 01-04-PLAN.md - Gap closure for role casing, FOUND-02 reassignment
+last_updated: "2026-04-28T00:00:00Z"
 last_activity: 2026-04-27 -- Phase 01 execution started
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 3
-  completed_plans: 2
-  percent: 67
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-25)
 ## Current Position
 
 Phase: 01 (RBAC Foundation) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 01
-Last activity: 2026-04-27 -- Phase 01 execution started
+Plan: 4 of 4 (complete)
+Status: Phase 01 complete — all 4 plans executed
+Last activity: 2026-04-28 -- Phase 01 plan 04 gap closure complete
 
-Progress: [███████░░░] 67%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [███████░░░] 67%
 *Updated after each plan completion*
 | Phase 01 P01 | 449 | 2 tasks | 2 files |
 | Phase 01-rbac-foundation P02 | 360 | 2 tasks | 4 files |
+| Phase 01-rbac-foundation P04 | checkpoint-resumed | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - role typed as string in CurrentUserData (not Prisma enum) so the decorator file does not import from generated/prisma across regenerations
 - Role read from DB on every authenticated request (not from JWT payload) — immediate revocation capability (FOUND-03)
 - Used Reflector.createDecorator<string[]>() for Roles decorator (NestJS 10+ typed API, not SetMetadata)
+- Canonical role casing is ADMIN/USER (uppercase) matching Prisma enum — all planning docs and future @Roles() decorators must use uppercase strings
+- FOUND-02 (hasTestAccess field) formally moved to Phase 4 ownership; Phase 4 requirements list now includes FOUND-02 explicitly
 
 ### Pending Todos
 
@@ -92,8 +95,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T10:16:30.112Z
-Stopped at: Completed 01-02-PLAN.md - Roles decorator, RolesGuard, and JwtStrategy role
+Last session: 2026-04-28T00:00:00Z
+Stopped at: Completed 01-04-PLAN.md - Gap closure for role casing, FOUND-02 reassignment
 Resume file: None
 
 **Planned Phase:** 1 (RBAC Foundation) — 3 plans — 2026-04-25T09:45:35.192Z

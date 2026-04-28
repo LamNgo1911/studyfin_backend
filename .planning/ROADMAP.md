@@ -35,7 +35,7 @@ Plans:
 - [ ] 01-01-PLAN.md — Add Role enum + db push + CurrentUserData interface (Wave 1)
 - [ ] 01-02-PLAN.md — Create RolesGuard, Roles decorator, update JwtStrategy (Wave 2)
 - [ ] 01-03-PLAN.md — Admin seed script + English cleanup script + package.json wiring (Wave 2)
-- [ ] 01-04-PLAN.md — Gap closure: fix role casing in docs, reassign FOUND-02, run DB cleanup (Wave 1, gap closure)
+- [x] 01-04-PLAN.md — Gap closure: fix role casing in docs, reassign FOUND-02, run DB cleanup (Wave 1, gap closure)
 
 ### Phase 2: DB-Backed APIs
 **Goal**: All program and institution data is served from local PostgreSQL with no live calls to Opintopolku
@@ -91,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. RBAC Foundation | 3/4 | Gap closure pending | - |
+| 1. RBAC Foundation | 4/4 | Complete (SC #4 DB cleanup pending operational step) | 2026-04-28 |
 | 2. DB-Backed APIs | 0/TBD | Not started | - |
 | 3. Guidance Content | 0/TBD | Not started | - |
 | 4. User Features | 0/TBD | Not started | - |
