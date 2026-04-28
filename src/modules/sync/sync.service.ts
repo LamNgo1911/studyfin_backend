@@ -12,6 +12,7 @@ const EDUCATION_TYPES = 'yo,amk,amm';
 @Injectable()
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
+  private isSyncing = false;
 
   constructor(
     private readonly httpService: HttpService,
@@ -25,13 +26,22 @@ export class SyncService {
   }
 
   async syncAll(): Promise<{ institutions: number; programs: number }> {
-    this.logger.log('Starting full sync');
-    const institutionCount = await this.syncInstitutions();
-    const programCount = await this.syncPrograms();
-    this.logger.log(
-      `Sync complete: ${institutionCount} institutions, ${programCount} programs`,
-    );
-    return { institutions: institutionCount, programs: programCount };
+    if (this.isSyncing) {
+      this.logger.warn('Sync already in progress — skipping concurrent run');
+      return { institutions: 0, programs: 0 };
+    }
+    this.isSyncing = true;
+    try {
+      this.logger.log('Starting full sync');
+      const institutionCount = await this.syncInstitutions();
+      const programCount = await this.syncPrograms();
+      this.logger.log(
+        `Sync complete: ${institutionCount} institutions, ${programCount} programs`,
+      );
+      return { institutions: institutionCount, programs: programCount };
+    } finally {
+      this.isSyncing = false;
+    }
   }
 
   async syncInstitutions(): Promise<number> {
@@ -150,19 +160,21 @@ export class SyncService {
         select: { id: true },
       });
       if (university) {
-        await this.prisma.universityLocation.deleteMany({
-          where: { universityId: university.id },
-        });
-        await this.prisma.universityLocation.createMany({
-          data: locations
-            .filter((l) => l.code)
-            .map((l) => ({
-              universityId: university.id,
-              code: l.code,
-              name: l.name,
-            })),
-          skipDuplicates: true,
-        });
+        await this.prisma.$transaction([
+          this.prisma.universityLocation.deleteMany({
+            where: { universityId: university.id },
+          }),
+          this.prisma.universityLocation.createMany({
+            data: locations
+              .filter((l) => l.code)
+              .map((l) => ({
+                universityId: university.id,
+                code: l.code,
+                name: l.name,
+              })),
+            skipDuplicates: true,
+          }),
+        ]);
       }
     }
   }
