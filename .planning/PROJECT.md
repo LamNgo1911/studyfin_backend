@@ -20,11 +20,11 @@ International students can discover and search all English-taught higher educati
 - ✓ Mock test system (templates, questions, attempts, scoring) — existing
 - ✓ Prisma schema with 13 models (University, Program, User, Auth, MockTest, etc.) — existing
 - ✓ Global PrismaService with PostgreSQL adapter — existing
+- ✓ English-only program filtering at sync time (Phase 01; cleanup script ready, DB cleanup pending operational run)
+- ✓ Clean API layer — programs and universities served from local PostgreSQL, Opintopolku live proxy retired (Phase 02)
 
 ### Active
 
-- [ ] Sync filtering to English-taught programs only (discard non-English during sync)
-- [ ] Clean own API layer replacing live Opintopolku proxy (serve from local DB, not upstream)
 - [ ] A-Z guidance content system (application steps, visa, housing, costs per program)
 - [ ] Program-specific info pages API (requirements, deadlines, what to expect)
 - [ ] Admin API endpoints for managing guidance content and mock test templates
@@ -46,8 +46,8 @@ International students can discover and search all English-taught higher educati
 
 - **Existing codebase:** NestJS 11 monolith with TypeScript 5.7, Prisma 7.6, PostgreSQL 16
 - **Data source:** `opintopolku.fi/konfo-backend` — Finland's national education API; fields often use Finnish keys instead of English; API can be slow/rate-limited
-- **Sync strategy:** Daily midnight cron pulls all institutions and programs, upserts into local PostgreSQL; switching to English-only filtering at sync time
-- **Dual data access:** Some modules still proxy live Opintopolku (universities, programs); goal is to migrate all to DB-backed queries from synced data
+- **Sync strategy:** Daily midnight cron pulls all institutions and programs, upserts into local PostgreSQL; filtering to English-only programs at sync time (Phase 01). SyncService has in-process mutex to prevent concurrent runs.
+- **Data access:** All program and institution modules (Programs, Universities) now serve from local PostgreSQL via PrismaService. Opintopolku is only contacted during sync. (Phase 02 — live proxy retired.)
 - **Target users:** International students researching Finland as a study destination
 - **Monetization:** ~$20-30/year access fee for UAS entrance exam mock tests; free tier includes search and A-Z guidance
 - **Frontend:** Separate `studyfin_frontend` repo at same directory level; consumes this backend API
@@ -65,8 +65,8 @@ International students can discover and search all English-taught higher educati
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Filter English programs at sync time, not query time | Keeps DB focused, simpler queries, less storage waste | — Pending |
-| Serve all data from local DB, retire Opintopolku live proxy | Avoids rate limits, normalizes Finnish field mess, faster responses | — Pending |
+| Filter English programs at sync time, not query time | Keeps DB focused, simpler queries, less storage waste | ✓ Done (Phase 01) |
+| Serve all data from local DB, retire Opintopolku live proxy | Avoids rate limits, normalizes Finnish field mess, faster responses | ✓ Done (Phase 02) |
 | Manual access gating for mock tests (no payment integration) | Keeps v1 simple; payment integration deferred to future milestone | — Pending |
 | Semi-automated guidance content (Opintopolku data + manual editorial) | Balance between automation and content quality | — Pending |
 | Admin API endpoints only (no admin UI) | Frontend team handles admin panel in separate repo | — Pending |
@@ -89,4 +89,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after initialization*
+*Last updated: 2026-04-28 after Phase 02 completion*
