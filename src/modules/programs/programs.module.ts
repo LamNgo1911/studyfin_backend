@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
 import { ProgramsController } from './programs.controller';
 import { ProgramsService } from './programs.service';
 
 @Module({
-  imports: [HttpModule],
+  imports: [],
   controllers: [ProgramsController],
   providers: [ProgramsService],
   exports: [ProgramsService],
