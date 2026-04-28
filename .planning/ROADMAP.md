@@ -46,7 +46,12 @@ Plans:
   2. `GET /universities/:oid` returns an institution record sourced from the local database, not from Opintopolku
   3. Running two concurrent sync jobs does not produce duplicate-key errors or corrupt upsert results
   4. A university's locations are never empty during a sync run (location update is atomic)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Rewrite ProgramsService with PrismaService + remove HttpModule from ProgramsModule (Wave 1)
+- [ ] 02-02-PLAN.md — Rewrite UniversitiesService with PrismaService + remove HttpModule from UniversitiesModule (Wave 1)
+- [ ] 02-03-PLAN.md — Patch SyncService: add mutex guard and $transaction for location upsert (Wave 1)
 
 ### Phase 3: Guidance Content
 **Goal**: Admins can create and update A-Z guidance content per program; any visitor can read it
