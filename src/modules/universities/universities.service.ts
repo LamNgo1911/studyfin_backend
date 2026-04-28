@@ -1,178 +1,114 @@
-import { Injectable, BadGatewayException } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../providers/prisma.service';
 
 @Injectable()
 export class UniversitiesService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: Record<string, any> = {}) {
-    const lng = query.lng ?? 'en';
-    const size = query.size ?? 20;
-    const page = query.page ?? 0;
+    const size = Number(query.size ?? 20);
+    const page = Number(query.page ?? 0);
 
-    const params: Record<string, string | number> = {
-      koulutustyyppi: 'yo,amk',
-      lng,
-      size,
-      page,
-    };
-
-    if (query.keyword) {
-      params.keyword = query.keyword;
-    }
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(`${OPINTOPOLKU_BASE}/search/oppilaitokset`, {
-          params,
-        }),
-      );
-
-      const data = response.data;
-      return {
-        total: data.total ?? 0,
-        page,
-        size,
-        hits: (data.hits ?? []).map((hit: any) =>
-          this.mapInstitution(hit, lng),
-        ),
-      };
-    } catch {
-      throw new BadGatewayException('Upstream Opintopolku API is unreachable');
-    }
-  }
-
-  async findOne(oid: string, lng: string = 'en') {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(`${OPINTOPOLKU_BASE}/oppilaitos/${oid}`),
-      );
-      return this.mapDetailedInstitution(response.data, lng);
-    } catch {
-      throw new BadGatewayException(
-        `Upstream Opintopolku API is unreachable for OID: ${oid}`,
-      );
-    }
-  }
-
-  private mapDetailedInstitution(data: any, lng: string) {
-    const oppilaitos = data.oppilaitos ?? {};
-    const metadata = oppilaitos.metadata ?? {};
-    const yhteystiedot = metadata.yhteystiedot ?? {};
-
-    const resolveLang = (obj: any) => {
-      if (!obj || typeof obj !== 'object') return obj ?? '';
-      return obj[lng] ?? obj.en ?? obj.fi ?? '';
-    };
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.university.count(),
+      this.prisma.university.findMany({
+        skip: page * size,
+        take: size,
+        include: { locations: true },
+      }),
+    ]);
 
     return {
-      oid: data.oid,
-      name: resolveLang(data.nimi),
-      type: resolveLang(data.oppilaitostyyppi?.nimi),
-      description: resolveLang(metadata.esittely),
-      location: resolveLang(data.kotipaikka?.nimi),
-      students: metadata.opiskelijoita ?? null,
-      campuses: metadata.kampuksia ?? null,
-      contact: {
-        email: resolveLang(yhteystiedot.sahkoposti),
-        phone: resolveLang(yhteystiedot.puhelinnumero),
-        website: resolveLang(yhteystiedot.www),
-        address: resolveLang(yhteystiedot.postiosoiteStr),
-      },
-      parts: (data.osat ?? []).map((osa: any) => ({
-        oid: osa.oid,
-        name: resolveLang(osa.nimi),
-        status: osa.status,
-        teachingLanguages: (osa.opetuskieli ?? []).map((k: any) =>
-          resolveLang(k.nimi),
-        ),
-      })),
+      total,
+      page,
+      size,
+      hits: rows.map((row) => this.mapUniversity(row)),
     };
+  }
+
+  async findOne(oid: string, _lng?: string) {
+    const university = await this.prisma.university.findUnique({
+      where: { oid },
+      include: { locations: true },
+    });
+    if (!university) throw new NotFoundException(`University not found: ${oid}`);
+    return this.mapDetailedUniversity(university);
   }
 
   async findPrograms(oid: string, query: Record<string, any> = {}) {
-    const lng = query.lng ?? 'en';
-    const size = query.size ?? 20;
-    const page = query.page ?? 0;
+    const size = Number(query.size ?? 20);
+    const page = Number(query.page ?? 0);
 
-    const params: Record<string, any> = {
-      tarjoaja: oid,
-      lng,
-      size,
+    // Resolve university id from OID (needed for join filter)
+    const university = await this.prisma.university.findUnique({
+      where: { oid },
+      select: { id: true },
+    });
+    if (!university) throw new NotFoundException(`University not found: ${oid}`);
+
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.program.count({
+        where: { universities: { some: { universityId: university.id } } },
+      }),
+      this.prisma.program.findMany({
+        where: { universities: { some: { universityId: university.id } } },
+        skip: page * size,
+        take: size,
+        include: {
+          universities: {
+            include: { university: { select: { oid: true, name: true } } },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      total,
       page,
-    };
-
-    if (query.keyword) {
-      params.keyword = query.keyword;
-    }
-    if (query.degreeOnly === 'true') {
-      params.johtaaTutkintoon = true;
-    }
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(`${OPINTOPOLKU_BASE}/search/koulutukset`, {
-          params,
-        }),
-      );
-
-      const data = response.data;
-      return {
-        total: data.total ?? 0,
-        page,
-        size,
-        hits: (data.hits ?? []).map((hit: any) => this.mapProgram(hit, lng)),
-      };
-    } catch {
-      throw new BadGatewayException(
-        `Upstream Opintopolku API is unreachable for programs of OID: ${oid}`,
-      );
-    }
-  }
-
-  private mapProgram(hit: any, lng: string) {
-    const resolveLang = (obj: any) => {
-      if (!obj || typeof obj !== 'object') return obj ?? '';
-      return obj[lng] ?? obj.en ?? obj.fi ?? '';
-    };
-
-    return {
-      oid: hit.oid,
-      name: resolveLang(hit.nimi),
-      description: resolveLang(hit.kuvaus),
-      type: hit.koulutustyyppi,
-      credits:
-        hit.opintojenLaajuusNumero ?? hit.opintojenLaajuusNumeroMax ?? null,
-      image: hit.teemakuva ?? '',
-      isOpenUniversity: !!hit.isAvoinKorkeakoulutus,
-      providers: hit.toteutustenTarjoajat?.nimi
-        ? [resolveLang(hit.toteutustenTarjoajat?.nimi)]
-        : [],
+      size,
+      hits: rows.map((row) => this.mapProgram(row)),
     };
   }
 
-  private mapInstitution(hit: any, lng: string) {
-    const name = hit.nimi?.[lng] ?? hit.nimi?.fi ?? '';
-    const description = hit.kuvaus?.[lng] ?? hit.kuvaus?.fi ?? '';
-    const counts = hit.koulutusohjelmatLkm ?? {};
-
+  private mapUniversity(row: any) {
     return {
-      oid: hit.oid ?? '',
-      name,
-      description,
-      logoUrl: hit.logo ?? '',
-      locations: (hit.paikkakunnat ?? []).map((p: any) => ({
-        code: p.koodiUri ?? '',
-        name: p.nimi?.[lng] ?? p.nimi?.fi ?? '',
+      oid: row.oid,
+      name: row.name,
+      description: row.description ?? null,
+      logoUrl: row.logoUrl ?? null,
+      type: row.type ?? null,
+      municipality: row.municipality ?? null,
+      studentCount: row.studentCount ?? null,
+      locations: (row.locations ?? []).map((loc: any) => ({
+        code: loc.code,
+        name: loc.name,
       })),
-      languages: hit.kielivalinta ?? [],
-      programCount: {
-        total: counts.kaikki ?? 0,
-        degreeProgrammes: counts.tutkintoonJohtavat ?? 0,
-        nonDegree: counts.eiTutkintoonJohtavat ?? 0,
-      },
+    };
+  }
+
+  private mapDetailedUniversity(row: any) {
+    return {
+      ...this.mapUniversity(row),
+      website: row.website ?? null,
+      email: row.email ?? null,
+    };
+  }
+
+  private mapProgram(row: any) {
+    return {
+      oid: row.oid,
+      name: row.name,
+      type: row.type,
+      isDegree: row.isDegree,
+      imageUrl: row.imageUrl ?? null,
+      fieldOfStudy: row.fieldOfStudy ?? null,
+      creditsAmount: row.creditsAmount ?? null,
+      creditsUnit: row.creditsUnit ?? null,
+      teachingLanguages: row.teachingLanguages ?? [],
+      providers: (row.universities ?? []).map((pu: any) => ({
+        oid: pu.university.oid,
+        name: pu.university.name,
+      })),
     };
   }
 }

@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
 import { UniversitiesController } from './universities.controller';
 import { UniversitiesService } from './universities.service';
 
 @Module({
-  imports: [HttpModule],
+  imports: [],
   controllers: [UniversitiesController],
   providers: [UniversitiesService],
   exports: [UniversitiesService],
