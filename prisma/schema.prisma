@@ -66,9 +66,10 @@ model Program {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  universities ProgramUniversity[]
-  userPrograms UserProgram[]
-  mockTests    MockTest[]
+  universities     ProgramUniversity[]
+  userPrograms     UserProgram[]
+  mockTests        MockTest[]
+  guidanceSections GuidanceSection[]
 
   @@index([type])
   @@index([isDegree])
@@ -83,6 +84,23 @@ model ProgramUniversity {
   university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
 
   @@id([programId, universityId])
+}
+
+// ─── Guidance Content ────────────────────────────────────────────────────────
+
+model GuidanceSection {
+  id         String   @id @default(cuid())
+  programOid String
+  program    Program  @relation(fields: [programOid], references: [oid], onDelete: Cascade)
+  key        String
+  title      String
+  body       String
+  order      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([programOid, key])
+  @@index([programOid])
 }
 
 enum Role {
