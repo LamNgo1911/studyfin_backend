@@ -1,38 +1,28 @@
 ---
 phase: 01-rbac-foundation
-verified: 2026-04-27T13:00:00Z
-status: gaps_found
-score: 11/14 must-haves verified
+verified: 2026-04-28T00:00:00Z
+status: gaps_resolved
+score: 13/14 must-haves verified
 overrides_applied: 0
-gaps:
-  - truth: "A route decorated with @Roles('admin') returns 403 when called by a user with role \"user\" (ROADMAP SC #2)"
-    status: failed
-    reason: "Implementation uses 'ADMIN' (uppercase Prisma enum) for required roles in RolesGuard and seed.ts, but ROADMAP SC #2 and #3 specify @Roles('admin') (lowercase). REQUIREMENTS.md GUID-04 and GUID-05 also specify @Roles('admin'). If future routes follow the ROADMAP/REQUIREMENTS casing they will fail the guard's includes() check because 'ADMIN' !== 'admin'. No admin-decorated routes exist yet so the mismatch is not yet visible at runtime, but the contract is broken."
-    artifacts:
-      - path: "src/common/guards/roles.guard.ts"
-        issue: "requiredRoles.includes(user.role) will use literal string comparison; user.role from Prisma is 'ADMIN' (uppercase); future routes using @Roles('admin') will produce 403 for admin users"
-      - path: "prisma/seed.ts"
-        issue: "role: 'ADMIN' — uppercase enum string. Consistent with guard but inconsistent with ROADMAP/REQUIREMENTS @Roles('admin') wording."
-    missing:
-      - "Decide and document the canonical role string casing: either (a) update ROADMAP SC #2/#3 and REQUIREMENTS GUID-04/GUID-05 to use 'ADMIN', or (b) lowercase the Prisma enum values to USER/ADMIN strings via a mapping in JwtStrategy.validate(). The guard and the decorator strings must match."
-
-  - truth: "User model has hasTestAccess boolean field for mock test monetization gating (FOUND-02 / ROADMAP Phase 1 requirement)"
-    status: failed
-    reason: "ROADMAP.md Phase 1 lists FOUND-02 as a Phase 1 requirement. REQUIREMENTS.md traceability table maps FOUND-02 to Phase 1. The field does not exist in prisma/schema.prisma. Phase 1 Context D-02 deferred this to Phase 4, but no Phase 4 plan claims FOUND-02 explicitly (Phase 4 covers USER-09 behavior but not the FOUND-02 schema field). This is an orphaned requirement with no phase claiming ownership."
-    artifacts:
-      - path: "prisma/schema.prisma"
-        issue: "User model has no hasTestAccess field"
-    missing:
-      - "Either (a) add hasTestAccess Boolean @default(false) to User model in this phase, or (b) update ROADMAP.md to move FOUND-02 to Phase 4 and update REQUIREMENTS.md traceability table accordingly, and ensure a Phase 4 plan claims it."
-
-  - truth: "The programs table contains no programs where 'en' is absent from teachingLanguages (ROADMAP SC #4)"
-    status: failed
-    reason: "The cleanup script exists and is correct, but SC #4 describes a database state ('programs table contains no...'), not a script. The script has not been run — it is an operational one-time step requiring manual execution. The database state cannot be verified programmatically without a live DB connection. This gap will be resolved when the operator runs npm run cleanup:programs."
-    artifacts:
-      - path: "prisma/cleanup-non-english.ts"
-        issue: "Script is correct and ready but not yet executed; database state is unknown"
-    missing:
-      - "Run npm run cleanup:programs against the target database and document the output (count of deleted records) to satisfy SC #4"
+gap_closure_applied: 01-04
+gap_closure_summary:
+  - id: gap-1-role-casing
+    description: Role casing mismatch (ROADMAP/REQUIREMENTS lowercase 'admin' vs uppercase 'ADMIN')
+    status: resolved
+    resolution: Gap closure plan 01-04 (commit 9e1bfae) updated all 4 occurrences to @Roles('ADMIN') in ROADMAP.md SC #2, SC #3 and REQUIREMENTS.md GUID-04, GUID-05. Implementation already correct. Docs now consistent.
+    verified: "grep '@Roles('"'"'admin'"'"'' returns 0 matches; grep '@Roles('"'"'ADMIN'"'"'' returns 4 matches (lines 29, 30 ROADMAP; lines 38, 39 REQUIREMENTS)"
+  - id: gap-2-found02-orphan
+    description: FOUND-02 orphaned — listed as Phase 1 in ROADMAP/REQUIREMENTS but deferred to Phase 4 by D-02
+    status: resolved
+    resolution: Gap closure plan 01-04 (commit 9e1bfae) moved FOUND-02 from Phase 1 to Phase 4 requirements in ROADMAP.md; updated REQUIREMENTS.md traceability table row to Phase 4. FOUND-02 is no longer orphaned.
+    verified: "grep 'FOUND-02' .planning/ROADMAP.md returns 1 match on Phase 4 requirements line; grep 'FOUND-02.*Phase 4' REQUIREMENTS.md returns 1 match"
+  - id: gap-3-db-cleanup
+    description: SC #4 DB state — cleanup script not run against live database
+    status: deferred_operational
+    resolution: Script (prisma/cleanup-non-english.ts) verified correct by plan 01-03. Operator must run `npm run cleanup:programs` against a populated database to satisfy SC #4. Skipped by operator (no DB available). Script is ready; no code changes needed.
+    verified: Script correct (verified 2026-04-27). DB state unverified — pending operational execution.
+    remaining: "Run `npm run cleanup:programs` against live DB and document output count."
+gaps: []
 ---
 
 # Phase 1: RBAC Foundation Verification Report
