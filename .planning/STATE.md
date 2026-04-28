@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 2 context gathered
-last_updated: "2026-04-28T10:42:28.545Z"
-last_activity: 2026-04-28 -- Phase 01 plan 04 gap closure complete
+stopped_at: Phase 2 complete
+last_updated: "2026-04-28T11:25:00.000Z"
+last_activity: 2026-04-28 -- Phase 02 complete — DB-backed APIs
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-25)
 
 **Core value:** International students can discover and search all English-taught higher education programs in Finland from a single, reliable source — and get step-by-step guidance on how to apply.
-**Current focus:** Phase 01 — RBAC Foundation
+**Current focus:** Phase 03 — Guidance Content
 
 ## Current Position
 
-Phase: 01 (RBAC Foundation) — EXECUTING
-Plan: 4 of 4 (complete)
-Status: Phase 01 complete — all 4 plans executed
-Last activity: 2026-04-28 -- Phase 01 plan 04 gap closure complete
+Phase: 02 (db-backed-apis) — COMPLETE
+Plans: 3/3 complete
+Status: Phase complete — all plans verified
+Last activity: 2026-04-28 -- Phase 02 complete — DB-backed APIs
 
-Progress: [███████░░░] 75%
+Progress: [██████████] 100% (Phase 2 done)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 7
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -44,17 +44,21 @@ Progress: [███████░░░] 75%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 4 | 4 | - |
+| 02 | 3 | 3 | - |
 
 **Recent Trend:**
 
-- Last 5 plans: -
+- Last 5 plans: Phase 02 plans
 - Trend: -
 
 *Updated after each plan completion*
 | Phase 01 P01 | 449 | 2 tasks | 2 files |
 | Phase 01-rbac-foundation P02 | 360 | 2 tasks | 4 files |
 | Phase 01-rbac-foundation P04 | checkpoint-resumed | 2 tasks | 2 files |
+| Phase 02-db-backed-apis P01 | ProgramsService → PrismaService | 2 tasks | 3 files |
+| Phase 02-db-backed-apis P02 | UniversitiesService → PrismaService | 2 tasks | 3 files |
+| Phase 02-db-backed-apis P03 | SyncService mutex + $transaction | 1 task | 2 files |
 
 ## Accumulated Context
 
@@ -73,6 +77,9 @@ Recent decisions affecting current work:
 - Used Reflector.createDecorator<string[]>() for Roles decorator (NestJS 10+ typed API, not SetMetadata)
 - Canonical role casing is ADMIN/USER (uppercase) matching Prisma enum — all planning docs and future @Roles() decorators must use uppercase strings
 - FOUND-02 (hasTestAccess field) formally moved to Phase 4 ownership; Phase 4 requirements list now includes FOUND-02 explicitly
+- ProgramsService reads from PostgreSQL via PrismaService; uses $transaction([count, findMany]) for atomic pagination
+- UniversitiesService reads from PostgreSQL via PrismaService; uses $transaction for findAll and findPrograms; findPrograms uses ProgramUniversity join
+- SyncService uses in-memory mutex (isSyncing flag) for single-process concurrent sync prevention; Prisma $transaction for atomic location upsert
 
 ### Pending Todos
 
@@ -95,8 +102,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 2 context gathered
+Last session: Phase 2 complete
+Stopped at: Phase 2 complete
 Resume file: --resume-file
 
-**Planned Phase:** 1 (RBAC Foundation) — 3 plans — 2026-04-25T09:45:35.192Z
+**Planned Phase:** 03 (guidance-content) — ready to discuss

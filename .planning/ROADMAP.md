@@ -13,7 +13,7 @@ This milestone extends an already-working NestJS 11 + Prisma + PostgreSQL system
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: RBAC Foundation** - Add role system, RBAC guards, and English-only DB cleanup
-- [ ] **Phase 2: DB-Backed APIs** - Retire live Opintopolku proxy; serve all data from local PostgreSQL
+- [x] **Phase 2: DB-Backed APIs** - Retire live Opintopolku proxy; serve all data from local PostgreSQL
 - [ ] **Phase 3: Guidance Content** - Build A-Z guidance content model, admin CRUD, and public read endpoints
 - [ ] **Phase 4: User Features** - Expose user profile, program shortlisting, and mock test access gating
 - [ ] **Phase 5: Search and Infrastructure** - Unified search, Redis caching, rate limiting, and Swagger docs
@@ -49,9 +49,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Rewrite ProgramsService with PrismaService + remove HttpModule from ProgramsModule (Wave 1)
-- [ ] 02-02-PLAN.md — Rewrite UniversitiesService with PrismaService + remove HttpModule from UniversitiesModule (Wave 1)
-- [ ] 02-03-PLAN.md — Patch SyncService: add mutex guard and $transaction for location upsert (Wave 1)
+- [x] 02-01-PLAN.md — Rewrite ProgramsService with PrismaService + remove HttpModule from ProgramsModule (Wave 1)
+- [x] 02-02-PLAN.md — Rewrite UniversitiesService with PrismaService + remove HttpModule from UniversitiesModule (Wave 1)
+- [x] 02-03-PLAN.md — Patch SyncService: add mutex guard and $transaction for location upsert (Wave 1)
 
 ### Phase 3: Guidance Content
 **Goal**: Admins can create and update A-Z guidance content per program; any visitor can read it
@@ -97,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. RBAC Foundation | 4/4 | Complete (SC #4 DB cleanup pending operational step) | 2026-04-28 |
-| 2. DB-Backed APIs | 0/TBD | Not started | - |
+| 2. DB-Backed APIs | 3/3 | Complete | 2026-04-28 |
 | 3. Guidance Content | 0/TBD | Not started | - |
 | 4. User Features | 0/TBD | Not started | - |
 | 5. Search and Infrastructure | 0/TBD | Not started | - |
