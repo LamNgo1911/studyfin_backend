@@ -90,7 +90,6 @@ Rewrote ProgramsService to serve all data from local PostgreSQL via PrismaServic
 
 No new threat surface introduced. T-02-01 (NaN pagination from `Number(undefined)`) is mitigated by `?? 0` / `?? 20` defaults before `Number()` coercion. T-02-02 and T-02-03 remain in `accept` disposition per the plan threat model — size unbounded and OID in 404 are acceptable for v1.
 
-## Commits
+## Self-Check: PASSED
 
-- `e88cf0a` feat(02-01): rewrite ProgramsService with PrismaService and add unit tests
-- `9f58655` feat(02-01): remove HttpModule from ProgramsModule
+All files created, all 3 commits found, no missing items.
