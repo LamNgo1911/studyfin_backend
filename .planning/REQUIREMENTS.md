@@ -35,8 +35,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [ ] **GUID-01**: `Guidance` Prisma model exists with `programOid String @unique`, `sections Json`, `updatedAt`, `createdAt`
 - [ ] **GUID-02**: `GuidanceModule` created with public `GET /guidance/:programOid` (no auth)
 - [ ] **GUID-03**: Guidance read endpoint returns sections JSON shaped as `[{key, title, body, order}]`
-- [ ] **GUID-04**: `GuidanceModule` has admin `POST /guidance/:programOid` guarded by `@UseGuards(JwtAuthGuard, RolesGuard) @Roles('admin')`
-- [ ] **GUID-05**: `GuidanceModule` has admin `PATCH /guidance/:programOid` guarded by `@UseGuards(JwtAuthGuard, RolesGuard) @Roles('admin')`
+- [ ] **GUID-04**: `GuidanceModule` has admin `POST /guidance/:programOid` guarded by `@UseGuards(JwtAuthGuard, RolesGuard) @Roles('ADMIN')`
+- [ ] **GUID-05**: `GuidanceModule` has admin `PATCH /guidance/:programOid` guarded by `@UseGuards(JwtAuthGuard, RolesGuard) @Roles('ADMIN')`
 - [ ] **GUID-06**: Guidance DTOs validate section structure (`key`, `title`, `body`, `order` fields required)
 - [ ] **GUID-07**: `GET /programs/:oid` and `GET /universities/:oid` responses include guidance availability indicator
 
@@ -115,7 +115,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
+| FOUND-02 | Phase 4 | Pending |
 | FOUND-03 | Phase 1 | Pending |
 | FOUND-04 | Phase 1 | Pending |
 | FOUND-05 | Phase 1 | Pending |
@@ -158,4 +158,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-25*
-*Last updated: 2026-04-25 after research synthesis*
+*Last updated: 2026-04-28 — FOUND-02 reassigned to Phase 4 (per D-02); GUID-04/GUID-05 corrected to @Roles('ADMIN') (uppercase, matching Prisma enum)*

@@ -23,18 +23,19 @@ Decimal phases appear between their surrounding integers in numeric order.
 ### Phase 1: RBAC Foundation
 **Goal**: The platform has a two-role access control system (user/admin) and contains only English-taught programs
 **Depends on**: Nothing (first phase)
-**Requirements**: FOUND-01, FOUND-02, FOUND-03, FOUND-04, FOUND-05, FOUND-06, FOUND-07
+**Requirements**: FOUND-01, FOUND-03, FOUND-04, FOUND-05, FOUND-06, FOUND-07
 **Success Criteria** (what must be TRUE):
   1. An authenticated request returns the caller's role from the database (not from the JWT payload)
-  2. A route decorated with `@Roles('admin')` returns 403 when called by a user with role "user"
-  3. A route decorated with `@Roles('admin')` returns 200 when called by a user with role "admin"
+  2. A route decorated with `@Roles('ADMIN')` returns 403 when called by a user with role "USER"
+  3. A route decorated with `@Roles('ADMIN')` returns 200 when called by a user with role "ADMIN"
   4. The programs table contains no programs where "en" is absent from teachingLanguages
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [ ] 01-01-PLAN.md — Add Role enum + db push + CurrentUserData interface (Wave 1)
 - [ ] 01-02-PLAN.md — Create RolesGuard, Roles decorator, update JwtStrategy (Wave 2)
 - [ ] 01-03-PLAN.md — Admin seed script + English cleanup script + package.json wiring (Wave 2)
+- [ ] 01-04-PLAN.md — Gap closure: fix role casing in docs, reassign FOUND-02, run DB cleanup (Wave 1, gap closure)
 
 ### Phase 2: DB-Backed APIs
 **Goal**: All program and institution data is served from local PostgreSQL with no live calls to Opintopolku
@@ -62,7 +63,7 @@ Plans:
 ### Phase 4: User Features
 **Goal**: Authenticated users can manage their profile and saved programs; admins can control mock test access
 **Depends on**: Phase 1
-**Requirements**: USER-01, USER-02, USER-03, USER-04, USER-05, USER-06, USER-07, USER-08, USER-09
+**Requirements**: FOUND-02, USER-01, USER-02, USER-03, USER-04, USER-05, USER-06, USER-07, USER-08, USER-09
 **Success Criteria** (what must be TRUE):
   1. `GET /users/me` returns the authenticated user's profile data
   2. `PATCH /users/me` updates and returns the authenticated user's profile
@@ -90,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. RBAC Foundation | 0/3 | Not started | - |
+| 1. RBAC Foundation | 3/4 | Gap closure pending | - |
 | 2. DB-Backed APIs | 0/TBD | Not started | - |
 | 3. Guidance Content | 0/TBD | Not started | - |
 | 4. User Features | 0/TBD | Not started | - |
