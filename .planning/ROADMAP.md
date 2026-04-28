@@ -63,6 +63,14 @@ Plans:
   3. `PATCH /guidance/:programOid` updates existing guidance sections when called by an admin
   4. Posting guidance with a malformed section (missing required fields) returns a 400 validation error
   5. `GET /programs/:oid` and `GET /universities/:oid` responses include a flag indicating whether guidance exists
+**Plans**: 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Add GuidanceSection schema model + npx prisma db push [BLOCKING] (Wave 1)
+- [ ] 03-02-PLAN.md — Create GuidanceSectionDto, CreateGuidanceDto, UpdateGuidanceDto + GuidanceService (Wave 2)
+- [ ] 03-03-PLAN.md — Create GuidanceController + GuidanceModule + wire into AppModule (Wave 3)
+- [ ] 03-04-PLAN.md — Add hasGuidance flag to programs/universities services + guidance.spec.ts (Wave 3, parallel)
+
 **UI hint**: no
 
 ### Phase 4: User Features
@@ -98,6 +106,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. RBAC Foundation | 4/4 | Complete (SC #4 DB cleanup pending operational step) | 2026-04-28 |
 | 2. DB-Backed APIs | 3/3 | Complete | 2026-04-28 |
-| 3. Guidance Content | 0/TBD | Not started | - |
+| 3. Guidance Content | 0/4 | Not started | - |
 | 4. User Features | 0/TBD | Not started | - |
 | 5. Search and Infrastructure | 0/TBD | Not started | - |
