@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { GuidanceService } from './guidance.service';
 import { PrismaService } from '../../providers/prisma.service';
 
@@ -62,6 +62,7 @@ describe('GuidanceService', () => {
 
   describe('findByProgramOid()', () => {
     it('returns sections sorted by order asc', async () => {
+      prisma.program.findUnique.mockResolvedValue({ oid: 'prog-oid-123' });
       prisma.guidanceSection.findMany.mockResolvedValue([mockSection]);
 
       const result = await service.findByProgramOid('prog-oid-123');
@@ -75,11 +76,20 @@ describe('GuidanceService', () => {
     });
 
     it('returns empty array when no sections exist', async () => {
+      prisma.program.findUnique.mockResolvedValue({ oid: 'prog-oid-123' });
       prisma.guidanceSection.findMany.mockResolvedValue([]);
 
       const result = await service.findByProgramOid('prog-oid-123');
 
       expect(result).toEqual([]);
+    });
+
+    it('throws NotFoundException when program does not exist', async () => {
+      prisma.program.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.findByProgramOid('unknown-oid'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -146,14 +156,12 @@ describe('GuidanceService', () => {
       expect(result[0].title).toBe('Updated Title');
     });
 
-    it('returns current sections unchanged when dto.sections is empty', async () => {
+    it('throws BadRequestException when dto.sections is empty', async () => {
       prisma.program.findUnique.mockResolvedValue({ oid: 'prog-oid-123' });
-      prisma.guidanceSection.findMany.mockResolvedValue([mockSection]);
 
-      const result = await service.patch('prog-oid-123', { sections: [] } as any);
-
-      expect(prisma.guidanceSection.upsert).not.toHaveBeenCalled();
-      expect(result).toHaveLength(1);
+      await expect(
+        service.patch('prog-oid-123', { sections: [] } as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });
