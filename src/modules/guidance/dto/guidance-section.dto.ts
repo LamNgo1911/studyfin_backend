@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class GuidanceSectionDto {
   @IsString()
@@ -14,5 +14,6 @@ export class GuidanceSectionDto {
   body: string;
 
   @IsInt()
+  @Min(0)
   order: number;
 }
