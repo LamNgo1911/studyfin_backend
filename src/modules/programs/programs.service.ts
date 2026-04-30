@@ -6,8 +6,10 @@ export class ProgramsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: Record<string, any> = {}) {
-    const size = Number(query.size ?? 20);
-    const page = Number(query.page ?? 0);
+    const rawSize = Number(query.size);
+    const rawPage = Number(query.page);
+    const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
+    const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
 
     const [total, rows] = await this.prisma.$transaction([
       this.prisma.program.count(),
