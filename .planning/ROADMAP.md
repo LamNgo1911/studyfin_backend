@@ -67,7 +67,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Add GuidanceSection schema model + npx prisma db push [BLOCKING] (Wave 1)
-- [ ] 03-02-PLAN.md — Create GuidanceSectionDto, CreateGuidanceDto, UpdateGuidanceDto + GuidanceService (Wave 2)
+- [x] 03-02-PLAN.md — Create GuidanceSectionDto, CreateGuidanceDto, UpdateGuidanceDto + GuidanceService (Wave 2)
 - [ ] 03-03-PLAN.md — Create GuidanceController + GuidanceModule + wire into AppModule (Wave 3)
 - [ ] 03-04-PLAN.md — Add hasGuidance flag to programs/universities services + guidance.spec.ts (Wave 3, parallel)
 
@@ -106,6 +106,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. RBAC Foundation | 4/4 | Complete (SC #4 DB cleanup pending operational step) | 2026-04-28 |
 | 2. DB-Backed APIs | 3/3 | Complete | 2026-04-28 |
-| 3. Guidance Content | 0/4 | Not started | - |
+| 3. Guidance Content | 2/4 | In Progress|  |
 | 4. User Features | 0/TBD | Not started | - |
 | 5. Search and Infrastructure | 0/TBD | Not started | - |
