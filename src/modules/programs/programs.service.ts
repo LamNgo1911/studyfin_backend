@@ -37,6 +37,7 @@ export class ProgramsService {
         universities: {
           include: { university: { select: { oid: true, name: true } } },
         },
+        _count: { select: { guidanceSections: true } },
       },
     });
     if (!program) throw new NotFoundException(`Program not found: ${oid}`);
@@ -78,6 +79,7 @@ export class ProgramsService {
       degreeTitles: row.degreeTitles ?? [],
       teachingLanguages: row.teachingLanguages ?? [],
       implementations: row.implementations ?? null,
+      hasGuidance: (row._count?.guidanceSections ?? 0) > 0,
       universities: (row.universities ?? []).map((pu: any) => ({
         oid: pu.university.oid,
         name: pu.university.name,

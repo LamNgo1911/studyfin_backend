@@ -60,6 +60,7 @@ export class UniversitiesService {
           universities: {
             include: { university: { select: { oid: true, name: true } } },
           },
+          _count: { select: { guidanceSections: true } },
         },
       }),
     ]);
@@ -107,6 +108,7 @@ export class UniversitiesService {
       creditsAmount: row.creditsAmount ?? null,
       creditsUnit: row.creditsUnit ?? null,
       teachingLanguages: row.teachingLanguages ?? [],
+      hasGuidance: (row._count?.guidanceSections ?? 0) > 0,
       providers: (row.universities ?? []).map((pu: any) => ({
         oid: pu.university.oid,
         name: pu.university.name,
