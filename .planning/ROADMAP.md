@@ -68,8 +68,8 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — Add GuidanceSection schema model + npx prisma db push [BLOCKING] (Wave 1)
 - [x] 03-02-PLAN.md — Create GuidanceSectionDto, CreateGuidanceDto, UpdateGuidanceDto + GuidanceService (Wave 2)
-- [ ] 03-03-PLAN.md — Create GuidanceController + GuidanceModule + wire into AppModule (Wave 3)
-- [ ] 03-04-PLAN.md — Add hasGuidance flag to programs/universities services + guidance.spec.ts (Wave 3, parallel)
+- [x] 03-03-PLAN.md — Create GuidanceController + GuidanceModule + wire into AppModule (Wave 3)
+- [x] 03-04-PLAN.md — Add hasGuidance flag to programs/universities services + guidance.spec.ts (Wave 3, parallel)
 
 **UI hint**: no
 
