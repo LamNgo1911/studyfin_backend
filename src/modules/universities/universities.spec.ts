@@ -19,7 +19,11 @@ const mockUniversityRow = {
 describe('UniversitiesService', () => {
   let service: UniversitiesService;
   let prisma: {
-    university: { count: jest.Mock; findMany: jest.Mock; findUnique: jest.Mock };
+    university: {
+      count: jest.Mock;
+      findMany: jest.Mock;
+      findUnique: jest.Mock;
+    };
     program: { count: jest.Mock; findMany: jest.Mock };
     $transaction: jest.Mock;
   };
@@ -97,15 +101,17 @@ describe('UniversitiesService', () => {
       expect(result.oid).toBe('1.2.246.562.10.56753942459');
       expect(result.website).toBe('https://aalto.fi');
       expect(result.email).toBe('info@aalto.fi');
-      expect(result.locations).toEqual([{ code: 'kunta_091', name: 'Helsinki' }]);
+      expect(result.locations).toEqual([
+        { code: 'kunta_091', name: 'Helsinki' },
+      ]);
     });
 
     it('throws NotFoundException for unknown OID', async () => {
       prisma.university.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.findOne('unknown-oid'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('unknown-oid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -121,7 +127,12 @@ describe('UniversitiesService', () => {
       creditsUnit: 'ECTS credits',
       teachingLanguages: ['en'],
       universities: [
-        { university: { oid: '1.2.246.562.10.56753942459', name: 'Aalto University' } },
+        {
+          university: {
+            oid: '1.2.246.562.10.56753942459',
+            name: 'Aalto University',
+          },
+        },
       ],
     };
 
@@ -135,7 +146,10 @@ describe('UniversitiesService', () => {
       prisma.program.count.mockResolvedValue(1);
       prisma.program.findMany.mockResolvedValue([mockProgramRow]);
 
-      const result = await service.findPrograms('1.2.246.562.10.56753942459', { page: 0, size: 20 });
+      const result = await service.findPrograms('1.2.246.562.10.56753942459', {
+        page: 0,
+        size: 20,
+      });
 
       expect(result.total).toBe(1);
       expect(result.hits[0].oid).toBe('prog-oid');
@@ -144,9 +158,9 @@ describe('UniversitiesService', () => {
     it('throws NotFoundException when university OID not found', async () => {
       prisma.university.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.findPrograms('unknown-oid', {}),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findPrograms('unknown-oid', {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

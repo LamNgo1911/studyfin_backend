@@ -22,7 +22,11 @@ describe('RolesGuard', () => {
 
   it('returns true when no @Roles() decorator is present (no required roles)', () => {
     reflector.get.mockReturnValue(undefined);
-    const ctx = createMockContext({ id: '1', email: 'user@test.com', role: 'USER' });
+    const ctx = createMockContext({
+      id: '1',
+      email: 'user@test.com',
+      role: 'USER',
+    });
 
     const result = guard.canActivate(ctx);
 
@@ -31,7 +35,11 @@ describe('RolesGuard', () => {
 
   it('returns true when user role matches required @Roles("ADMIN") decorator', () => {
     reflector.get.mockReturnValue(['ADMIN']);
-    const ctx = createMockContext({ id: '1', email: 'admin@test.com', role: 'ADMIN' });
+    const ctx = createMockContext({
+      id: '1',
+      email: 'admin@test.com',
+      role: 'ADMIN',
+    });
 
     const result = guard.canActivate(ctx);
 
@@ -40,7 +48,11 @@ describe('RolesGuard', () => {
 
   it('throws ForbiddenException when user role does not match @Roles("ADMIN")', () => {
     reflector.get.mockReturnValue(['ADMIN']);
-    const ctx = createMockContext({ id: '1', email: 'user@test.com', role: 'USER' });
+    const ctx = createMockContext({
+      id: '1',
+      email: 'user@test.com',
+      role: 'USER',
+    });
 
     expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
   });
@@ -54,7 +66,11 @@ describe('RolesGuard', () => {
 
   it('verifies reflector.get is called with Roles decorator and context handler', () => {
     reflector.get.mockReturnValue(undefined);
-    const ctx = createMockContext({ id: '1', email: 'user@test.com', role: 'USER' });
+    const ctx = createMockContext({
+      id: '1',
+      email: 'user@test.com',
+      role: 'USER',
+    });
 
     guard.canActivate(ctx);
 

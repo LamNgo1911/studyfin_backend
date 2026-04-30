@@ -31,7 +31,8 @@ export class UniversitiesService {
       where: { oid },
       include: { locations: true },
     });
-    if (!university) throw new NotFoundException(`University not found: ${oid}`);
+    if (!university)
+      throw new NotFoundException(`University not found: ${oid}`);
     return this.mapDetailedUniversity(university);
   }
 
@@ -44,7 +45,8 @@ export class UniversitiesService {
       where: { oid },
       select: { id: true },
     });
-    if (!university) throw new NotFoundException(`University not found: ${oid}`);
+    if (!university)
+      throw new NotFoundException(`University not found: ${oid}`);
 
     const [total, rows] = await this.prisma.$transaction([
       this.prisma.program.count({

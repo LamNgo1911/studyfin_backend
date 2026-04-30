@@ -47,7 +47,10 @@ describe('ProgramsService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ProgramsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ProgramsService,
+        { provide: PrismaService, useValue: prisma },
+      ],
     }).compile();
 
     service = module.get(ProgramsService);
@@ -107,7 +110,9 @@ describe('ProgramsService', () => {
       expect(result.eqfLevel).toBe('eqf_6');
       expect(result.nqfLevel).toBe('nqf_6');
       expect(result.degreeTitles).toEqual(['Bachelor of Science']);
-      expect(result.implementations).toEqual([{ oid: 'impl-oid', name: 'CS implementation' }]);
+      expect(result.implementations).toEqual([
+        { oid: 'impl-oid', name: 'CS implementation' },
+      ]);
       expect(result.universities[0].oid).toBe('uni-oid-1');
       expect(result.universities[0].name).toBe('Aalto University');
     });
