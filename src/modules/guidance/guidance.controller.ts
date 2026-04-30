@@ -28,7 +28,7 @@ export class GuidanceController {
 
   @Post(':programOid')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles(['ADMIN'])
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   create(
     @Param('programOid') programOid: string,
@@ -40,7 +40,7 @@ export class GuidanceController {
   @Patch(':programOid')
   @HttpCode(200)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles(['ADMIN'])
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   patch(
     @Param('programOid') programOid: string,

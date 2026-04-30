@@ -10,6 +10,7 @@ import { ProgramsModule } from './modules/programs/programs.module';
 import { MockTestsModule } from './modules/mock-tests/mock-tests.module';
 import { PrismaModule } from './providers/prisma.module';
 import { SyncModule } from './modules/sync/sync.module';
+import { GuidanceModule } from './modules/guidance/guidance.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SyncModule } from './modules/sync/sync.module';
     UsersModule,
     UniversitiesModule,
     ProgramsModule,
+    GuidanceModule,
     MockTestsModule,
   ],
   controllers: [AppController],
