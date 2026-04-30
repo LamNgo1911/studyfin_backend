@@ -6,8 +6,13 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+
 const jwtOptions: JwtModuleOptions = {
-  secret: process.env.JWT_SECRET || 'fallback-secret-change-in-production',
+  secret: jwtSecret,
   signOptions: {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     expiresIn: (process.env.JWT_ACCESS_EXPIRATION || '15m') as any,
