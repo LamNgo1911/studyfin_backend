@@ -302,6 +302,7 @@ describe('MockTestsService', () => {
     };
 
     it('grades answers correctly and returns results', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.findUnique
         .mockResolvedValueOnce(mockTestWithTemplate)
         .mockResolvedValueOnce({
@@ -334,6 +335,7 @@ describe('MockTestsService', () => {
     });
 
     it('throws NotFoundException for non-existent test', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.findUnique.mockResolvedValue(null);
 
       await expect(
@@ -342,6 +344,7 @@ describe('MockTestsService', () => {
     });
 
     it('throws ForbiddenException for wrong user', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.findUnique.mockResolvedValue({
         ...mockTestWithTemplate,
         userId: 'other-user',
@@ -353,6 +356,7 @@ describe('MockTestsService', () => {
     });
 
     it('throws BadRequestException for already completed test', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.findUnique.mockResolvedValue({
         ...mockTestWithTemplate,
         status: 'completed',
@@ -364,6 +368,7 @@ describe('MockTestsService', () => {
     });
 
     it('throws BadRequestException for invalid question', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.findUnique.mockResolvedValue(mockTestWithTemplate);
 
       await expect(
@@ -376,6 +381,7 @@ describe('MockTestsService', () => {
     });
 
     it('throws BadRequestException for invalid option', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.findUnique.mockResolvedValue(mockTestWithTemplate);
 
       await expect(
@@ -388,6 +394,7 @@ describe('MockTestsService', () => {
     });
 
     it('handles unanswered questions (null selectedOptionId)', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.findUnique
         .mockResolvedValueOnce(mockTestWithTemplate)
         .mockResolvedValueOnce({
@@ -415,10 +422,19 @@ describe('MockTestsService', () => {
       expect(result.score).toBe(0);
       expect(result.answers[0].isCorrect).toBe(false);
     });
+
+    it('throws ForbiddenException when user does not have test access', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: false });
+
+      await expect(
+        service.submitAnswers('user-1', 'test-1', { answers: [] }),
+      ).rejects.toThrow(ForbiddenException);
+    });
   });
 
   describe('getHistory()', () => {
     it('returns paginated list of user test attempts', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.count.mockResolvedValue(1);
       prisma.mockTest.findMany.mockResolvedValue([
         {
@@ -439,6 +455,7 @@ describe('MockTestsService', () => {
     });
 
     it('filters by status when provided', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.mockTest.count.mockResolvedValue(0);
       prisma.mockTest.findMany.mockResolvedValue([]);
 
@@ -451,6 +468,14 @@ describe('MockTestsService', () => {
       expect(prisma.mockTest.count).toHaveBeenCalledWith({
         where: { userId: 'user-1', status: 'completed' },
       });
+    });
+
+    it('throws ForbiddenException when user does not have test access', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: false });
+
+      await expect(
+        service.getHistory('user-1', { size: 20, page: 0 }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
