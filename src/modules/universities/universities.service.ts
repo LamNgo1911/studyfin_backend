@@ -20,9 +20,23 @@ export class UniversitiesService {
     const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
     const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
 
+    const where =
+      query.language
+        ? {
+            programs: {
+              some: {
+                program: {
+                  teachingLanguages: { has: query.language },
+                },
+              },
+            },
+          }
+        : {};
+
     const [total, rows] = await this.prisma.$transaction([
-      this.prisma.university.count(),
+      this.prisma.university.count({ where }),
       this.prisma.university.findMany({
+        where,
         skip: page * size,
         take: size,
         include: { locations: true },

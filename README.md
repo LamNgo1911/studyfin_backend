@@ -116,6 +116,11 @@ The server starts at **http://localhost:3000** by default.
 | `GET` | `/api/v1/universities/:oid` | University by OID |
 | `GET` | `/api/v1/universities/:oid/programs` | Programs for a university |
 
+**Query parameters for `/universities`:**
+- `size` — results per page (default: 20)
+- `page` — page number (0-indexed, default: 0)
+- `language` — filter universities by teaching language (e.g. `en`, `fi`). Only universities with at least one program in that language are returned.
+
 ### Programs
 
 | Method | Path | Description |
