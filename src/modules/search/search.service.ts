@@ -129,14 +129,17 @@ export class SearchService {
     page: number,
     size: number,
   ) {
-    // Fetch both types — take extra results to ensure good mixing after pagination
-    const fetchSize = size;
+    // Fetch both types — take enough from each to cover the requested page
+    // after merging. 2× size is a safe ceiling for the worst case of highly
+    // unbalanced result sets (all hits come from one side).
+    const fetchSize = size * 2;
     const [progTotal, uniTotal, programs, universities] = await Promise.all([
       this.prisma.program.count({ where: progWhere }),
       this.prisma.university.count({ where: uniWhere }),
       this.prisma.program.findMany({
         where: progWhere,
         orderBy: progOrderBy,
+        skip: page * Math.ceil(size / 2),
         take: fetchSize,
         include: {
           universities: {
@@ -147,33 +150,19 @@ export class SearchService {
       this.prisma.university.findMany({
         where: uniWhere,
         orderBy: uniOrderBy,
+        skip: page * Math.floor(size / 2),
         take: fetchSize,
         include: { locations: true },
       }),
     ]);
 
-    // Merge: programs first when q is provided (they are more specific),
-    // then institutions. When no q, alternate for visual variety.
-    let merged: any[];
+    // Program hits first (more specific results), then institution hits.
     const progHits = programs.map((p) => this.mapProgramHit(p));
     const uniHits = universities.map((u) => this.mapInstitutionHit(u));
-
-    if (progWhere.name?.search) {
-      // Relevance mode: programs first, then institutions
-      merged = [...progHits, ...uniHits];
-    } else {
-      // No query: interleave for visual variety
-      merged = [];
-      const maxLen = Math.max(progHits.length, uniHits.length);
-      for (let i = 0; i < maxLen; i++) {
-        if (i < progHits.length) merged.push(progHits[i]);
-        if (i < uniHits.length) merged.push(uniHits[i]);
-      }
-    }
+    const merged = [...progHits, ...uniHits];
 
     const total = progTotal + uniTotal;
-    const start = page * size;
-    const paginated = merged.slice(start, start + size);
+    const paginated = merged.slice(0, size);
 
     return { total, page, size, hits: paginated };
   }
