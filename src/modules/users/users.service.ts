@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../providers/prisma.service';
 import { User } from '../../../generated/prisma';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateSavedProgramDto } from './dto/save-program.dto';
+import { ListSavedProgramsQueryDto } from './dto/list-saved-programs-query.dto';
 
 export interface CreateUserInput {
   email: string;
@@ -80,6 +83,158 @@ export class UsersService {
         passwordHash,
         resetToken: null,
         resetTokenExpiresAt: null,
+      },
+    });
+  }
+
+  private readonly PROFILE_SELECT = {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    role: true,
+    hasTestAccess: true,
+    emailVerifiedAt: true,
+    createdAt: true,
+    _count: { select: { savedPrograms: true } },
+  } as const;
+
+  private mapProfile(user: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    role: string;
+    hasTestAccess: boolean;
+    emailVerifiedAt: Date | null;
+    createdAt: Date;
+    _count: { savedPrograms: number };
+  }) {
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      hasTestAccess: user.hasTestAccess,
+      emailVerifiedAt: user.emailVerifiedAt,
+      createdAt: user.createdAt,
+      savedProgramCount: user._count.savedPrograms,
+    };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: this.PROFILE_SELECT,
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return this.mapProfile(user);
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(dto.firstName !== undefined && { firstName: dto.firstName }),
+          ...(dto.lastName !== undefined && { lastName: dto.lastName }),
+        },
+        select: this.PROFILE_SELECT,
+      });
+      return this.mapProfile(user);
+    } catch (err: any) {
+      // P2025: record not found
+      if (err?.code === 'P2025') {
+        throw new NotFoundException('User not found');
+      }
+      throw err;
+    }
+  }
+
+  async saveProgram(userId: string, programId: string) {
+    // Verify program exists
+    const program = await this.prisma.program.findUnique({
+      where: { id: programId },
+    });
+    if (!program) throw new NotFoundException('Program not found');
+
+    // Create with default status per D-04
+    try {
+      return await this.prisma.userProgram.create({
+        data: { userId, programId, status: 'interested' },
+        select: {
+          id: true,
+          programId: true,
+          status: true,
+          createdAt: true,
+          program: {
+            select: { name: true, oid: true, type: true, fieldOfStudy: true },
+          },
+        },
+      });
+    } catch (err: any) {
+      // P2002: unique constraint violation (already saved)
+      if (err?.code === 'P2002') {
+        throw new ConflictException('Program already saved');
+      }
+      throw err;
+    }
+  }
+
+  async updateSavedProgramStatus(
+    userId: string,
+    programId: string,
+    dto: UpdateSavedProgramDto,
+  ) {
+    const existing = await this.prisma.userProgram.findUnique({
+      where: { userId_programId: { userId, programId } },
+    });
+    if (!existing) throw new NotFoundException('Saved program not found');
+
+    return this.prisma.userProgram.update({
+      where: { userId_programId: { userId, programId } },
+      data: { status: dto.status },
+      select: {
+        id: true,
+        programId: true,
+        status: true,
+        createdAt: true,
+        program: {
+          select: { name: true, oid: true, type: true, fieldOfStudy: true },
+        },
+      },
+    });
+  }
+
+  async removeSavedProgram(userId: string, programId: string) {
+    const existing = await this.prisma.userProgram.findUnique({
+      where: { userId_programId: { userId, programId } },
+    });
+    if (!existing) throw new NotFoundException('Saved program not found');
+
+    await this.prisma.userProgram.delete({
+      where: { userId_programId: { userId, programId } },
+    });
+  }
+
+  async listSavedPrograms(userId: string, query: ListSavedProgramsQueryDto) {
+    const where = {
+      userId,
+      ...(query.status && { status: query.status }),
+    };
+
+    return this.prisma.userProgram.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        programId: true,
+        status: true,
+        createdAt: true,
+        program: {
+          select: { name: true, oid: true, type: true, fieldOfStudy: true },
+        },
       },
     });
   }
