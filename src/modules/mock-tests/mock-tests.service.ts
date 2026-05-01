@@ -230,7 +230,16 @@ export class MockTestsService {
       pointsAwarded: number;
     }[] = [];
 
+    // Deduplicate answers by questionId to prevent DB unique constraint violation
+    const seenQuestions = new Set<string>();
     for (const answer of dto.answers) {
+      if (seenQuestions.has(answer.questionId)) {
+        throw new BadRequestException(
+          `Duplicate answer submitted for question ${answer.questionId}`,
+        );
+      }
+      seenQuestions.add(answer.questionId);
+
       const question = questionMap.get(answer.questionId);
       if (!question) {
         throw new BadRequestException(
