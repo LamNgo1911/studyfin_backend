@@ -15,7 +15,7 @@ const mockProgramRow = {
   creditsUnit: 'ECTS credits',
   teachingLanguages: ['en'],
   universities: [
-    { university: { oid: 'uni-oid-1', name: 'Aalto University' } },
+    { university: { oid: 'uni-oid-1', name: 'Aalto University', nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University' } } },
   ],
 };
 

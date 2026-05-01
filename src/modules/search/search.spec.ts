@@ -7,7 +7,9 @@ const mockUniversityRow = {
   oid: '1.2.246.562.10.56753942459',
   id: 'uni-1',
   name: 'Aalto University',
+  nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University', sv: 'Aalto-universitetet' },
   description: 'A great university',
+  descriptionMultilingual: { fi: 'Mahtava yliopisto', en: 'A great university' },
   logoUrl: 'https://example.com/logo.png',
   type: 'yo',
   municipality: 'Helsinki',
@@ -39,6 +41,7 @@ const mockProgramRow = {
       university: {
         oid: '1.2.246.562.10.56753942459',
         name: 'Aalto University',
+        nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University' },
         locations: [{ code: 'kunta_091', name: 'Helsinki' }],
       },
     },

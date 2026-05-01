@@ -7,7 +7,9 @@ import { PrismaService } from '../../providers/prisma.service';
 const mockUniversityRow = {
   oid: '1.2.246.562.10.56753942459',
   name: 'Aalto University',
+  nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University', sv: 'Aalto-universitetet' },
   description: 'A great university',
+  descriptionMultilingual: { fi: 'Mahtava yliopisto', en: 'A great university' },
   logoUrl: 'https://example.com/logo.png',
   type: 'yo',
   municipality: 'Helsinki',
@@ -94,6 +96,15 @@ describe('UniversitiesService', () => {
       const findManyArgs = prisma.university.findMany.mock.calls[0][0];
       expect(findManyArgs.skip).toBe(10); // page 2 * size 5
       expect(findManyArgs.take).toBe(5);
+    });
+
+    it('resolves name/description by language when lng param is provided', async () => {
+      prisma.$transaction.mockResolvedValue([1, [mockUniversityRow]]);
+
+      const result = await service.findAll({ lng: 'fi', size: 20, page: 0 });
+
+      expect(result.hits[0].name).toBe('Aalto-yliopisto');
+      expect(result.hits[0].description).toBe('Mahtava yliopisto');
     });
   });
 

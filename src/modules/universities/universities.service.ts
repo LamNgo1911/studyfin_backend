@@ -19,6 +19,7 @@ export class UniversitiesService {
     const rawPage = Number(query.page);
     const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
     const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
+    const lng: string = query.lng ?? 'en';
 
     const where =
       query.language
@@ -47,15 +48,15 @@ export class UniversitiesService {
       total,
       page,
       size,
-      hits: rows.map((row) => this.mapUniversity(row)),
+      hits: rows.map((row) => this.mapUniversity(row, lng)),
     };
 
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
     return result;
   }
 
-  async findOne(oid: string) {
-    const cacheKey = `universities:detail:${oid}`;
+  async findOne(oid: string, lng: string = 'en') {
+    const cacheKey = `universities:detail:${oid}:${lng}`;
     const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached;
 
@@ -66,7 +67,7 @@ export class UniversitiesService {
     if (!university)
       throw new NotFoundException(`University not found: ${oid}`);
 
-    const result = this.mapDetailedUniversity(university);
+    const result = this.mapDetailedUniversity(university, lng);
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
     return result;
   }
@@ -80,6 +81,7 @@ export class UniversitiesService {
     const rawPage = Number(query.page);
     const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
     const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
+    const lng: string = query.lng ?? 'en';
 
     // Resolve university id from OID (needed for join filter)
     const university = await this.prisma.university.findUnique({
@@ -99,7 +101,7 @@ export class UniversitiesService {
         take: size,
         include: {
           universities: {
-            include: { university: { select: { oid: true, name: true } } },
+            include: { university: { select: { oid: true, name: true, nameMultilingual: true } } },
           },
           _count: { select: { guidanceSections: true } },
         },
@@ -110,18 +112,25 @@ export class UniversitiesService {
       total,
       page,
       size,
-      hits: rows.map((row) => this.mapProgram(row)),
+      hits: rows.map((row) => this.mapProgram(row, lng)),
     };
 
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
     return result;
   }
 
-  private mapUniversity(row: any) {
+  private resolveLang(data: any, lng: string): string {
+    if (!data) return '';
+    if (typeof data === 'string') return data;
+    if (typeof data !== 'object') return String(data);
+    return data[lng] ?? data.en ?? data.fi ?? '';
+  }
+
+  private mapUniversity(row: any, lng: string) {
     return {
       oid: row.oid,
-      name: row.name,
-      description: row.description ?? null,
+      name: this.resolveLang(row.nameMultilingual ?? row.name, lng),
+      description: this.resolveLang(row.descriptionMultilingual ?? row.description, lng) ?? null,
       logoUrl: row.logoUrl ?? null,
       type: row.type ?? null,
       municipality: row.municipality ?? null,
@@ -133,15 +142,15 @@ export class UniversitiesService {
     };
   }
 
-  private mapDetailedUniversity(row: any) {
+  private mapDetailedUniversity(row: any, lng: string) {
     return {
-      ...this.mapUniversity(row),
+      ...this.mapUniversity(row, lng),
       website: row.website ?? null,
       email: row.email ?? null,
     };
   }
 
-  private mapProgram(row: any) {
+  private mapProgram(row: any, lng: string) {
     return {
       oid: row.oid,
       name: row.name,
@@ -155,7 +164,7 @@ export class UniversitiesService {
       hasGuidance: (row._count?.guidanceSections ?? 0) > 0,
       providers: (row.universities ?? []).map((pu: any) => ({
         oid: pu.university.oid,
-        name: pu.university.name,
+        name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name, lng),
       })),
     };
   }

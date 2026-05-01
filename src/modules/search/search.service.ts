@@ -167,6 +167,13 @@ export class SearchService {
     return { total, page, size, hits: paginated };
   }
 
+  private resolveLang(data: any): string {
+    if (!data) return '';
+    if (typeof data === 'string') return data;
+    if (typeof data !== 'object') return String(data);
+    return data.en ?? data.fi ?? '';
+  }
+
   private mapProgramHit(row: any): SearchHitDto {
     return {
       oid: row.oid,
@@ -187,7 +194,7 @@ export class SearchService {
       implementations: row.implementations ?? undefined,
       providers: (row.universities ?? []).map((pu: any) => ({
         oid: pu.university.oid,
-        name: pu.university.name,
+        name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
         locations: (pu.university.locations ?? []).map((l: any) => ({
           code: l.code,
           name: l.name,
@@ -199,8 +206,8 @@ export class SearchService {
   private mapInstitutionHit(row: any): SearchHitDto {
     return {
       oid: row.oid,
-      name: row.name,
-      description: row.description ?? undefined,
+      name: this.resolveLang(row.nameMultilingual ?? row.name),
+      description: this.resolveLang(row.descriptionMultilingual ?? row.description) ?? undefined,
       type: 'institution',
       itemType: row.type,
       logoUrl: row.logoUrl ?? undefined,

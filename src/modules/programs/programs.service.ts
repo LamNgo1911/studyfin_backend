@@ -27,7 +27,7 @@ export class ProgramsService {
         take: size,
         include: {
           universities: {
-            include: { university: { select: { oid: true, name: true } } },
+            include: { university: { select: { oid: true, name: true, nameMultilingual: true } } },
           },
         },
       }),
@@ -53,7 +53,7 @@ export class ProgramsService {
       where: { oid },
       include: {
         universities: {
-          include: { university: { select: { oid: true, name: true } } },
+          include: { university: { select: { oid: true, name: true, nameMultilingual: true } } },
         },
         _count: { select: { guidanceSections: true } },
       },
@@ -63,6 +63,13 @@ export class ProgramsService {
     const result = this.mapProgramDetail(program);
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
     return result;
+  }
+
+  private resolveLang(data: any): string {
+    if (!data) return '';
+    if (typeof data === 'string') return data;
+    if (typeof data !== 'object') return String(data);
+    return data.en ?? data.fi ?? '';
   }
 
   private mapProgram(row: any) {
@@ -78,7 +85,7 @@ export class ProgramsService {
       teachingLanguages: row.teachingLanguages ?? [],
       providers: (row.universities ?? []).map((pu: any) => ({
         oid: pu.university.oid,
-        name: pu.university.name,
+        name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
       })),
     };
   }
@@ -103,7 +110,7 @@ export class ProgramsService {
       hasGuidance: (row._count?.guidanceSections ?? 0) > 0,
       universities: (row.universities ?? []).map((pu: any) => ({
         oid: pu.university.oid,
-        name: pu.university.name,
+        name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
       })),
     };
   }
