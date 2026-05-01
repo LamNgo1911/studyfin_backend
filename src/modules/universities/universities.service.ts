@@ -1,11 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { PrismaService } from '../../providers/prisma.service';
 
 @Injectable()
 export class UniversitiesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   async findAll(query: Record<string, any> = {}) {
+    const cacheKey = `universities:list:${JSON.stringify(query)}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const rawSize = Number(query.size);
     const rawPage = Number(query.page);
     const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
@@ -20,25 +29,39 @@ export class UniversitiesService {
       }),
     ]);
 
-    return {
+    const result = {
       total,
       page,
       size,
       hits: rows.map((row) => this.mapUniversity(row)),
     };
+
+    await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
+    return result;
   }
 
   async findOne(oid: string, _lng?: string) {
+    const cacheKey = `universities:detail:${oid}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const university = await this.prisma.university.findUnique({
       where: { oid },
       include: { locations: true },
     });
     if (!university)
       throw new NotFoundException(`University not found: ${oid}`);
-    return this.mapDetailedUniversity(university);
+
+    const result = this.mapDetailedUniversity(university);
+    await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
+    return result;
   }
 
   async findPrograms(oid: string, query: Record<string, any> = {}) {
+    const cacheKey = `universities:programs:${oid}:${JSON.stringify(query)}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const rawSize = Number(query.size);
     const rawPage = Number(query.page);
     const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
@@ -69,12 +92,15 @@ export class UniversitiesService {
       }),
     ]);
 
-    return {
+    const result = {
       total,
       page,
       size,
       hits: rows.map((row) => this.mapProgram(row)),
     };
+
+    await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
+    return result;
   }
 
   private mapUniversity(row: any) {
