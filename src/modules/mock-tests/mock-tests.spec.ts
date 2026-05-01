@@ -88,6 +88,9 @@ describe('MockTestsService', () => {
     program: {
       findUnique: jest.Mock;
     };
+    user: {
+      findUnique: jest.Mock;
+    };
     mockTest: {
       count: jest.Mock;
       findFirst: jest.Mock;
@@ -113,6 +116,9 @@ describe('MockTestsService', () => {
         aggregate: jest.fn(),
       },
       program: {
+        findUnique: jest.fn(),
+      },
+      user: {
         findUnique: jest.fn(),
       },
       mockTest: {
@@ -209,6 +215,7 @@ describe('MockTestsService', () => {
 
   describe('startTest()', () => {
     it('creates a new test attempt', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.testTemplate.findUnique.mockResolvedValue({
         ...mockTemplate,
         _count: { questions: 10 },
@@ -230,7 +237,24 @@ describe('MockTestsService', () => {
       expect(result.maxScore).toBe(10);
     });
 
+    it('throws ForbiddenException when user does not have test access', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: false });
+
+      await expect(
+        service.startTest('user-1', { templateId: 'template-1' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when user is not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.startTest('user-1', { templateId: 'template-1' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
     it('throws NotFoundException for invalid template', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.testTemplate.findUnique.mockResolvedValue(null);
 
       await expect(
@@ -239,6 +263,7 @@ describe('MockTestsService', () => {
     });
 
     it('throws ConflictException for duplicate in-progress test', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.testTemplate.findUnique.mockResolvedValue({
         ...mockTemplate,
         _count: { questions: 10 },
@@ -251,6 +276,7 @@ describe('MockTestsService', () => {
     });
 
     it('validates programId when provided', async () => {
+      prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true });
       prisma.testTemplate.findUnique.mockResolvedValue({
         ...mockTemplate,
         _count: { questions: 10 },
