@@ -284,6 +284,18 @@ export class MockTestsService {
       });
     }
 
+    // Validate that all template questions have been answered
+    const answeredQuestionIds = new Set(
+      answersToCreate.map((a) => a.questionId),
+    );
+    for (const [qId] of questionMap) {
+      if (!answeredQuestionIds.has(qId)) {
+        throw new BadRequestException(
+          `Answer missing for question ${qId}`,
+        );
+      }
+    }
+
     // Save answers and update mock test atomically
     await this.prisma.$transaction(async (tx) => {
       // Create all answers
