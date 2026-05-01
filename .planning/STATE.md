@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 5 context gathered
-last_updated: "2026-05-01T12:59:10.577Z"
-last_activity: 2026-05-01 -- Phase 05 planning complete
+last_updated: "2026-05-01T13:05:00.429Z"
+last_activity: 2026-05-01 -- Phase 05 execution started
 progress:
   total_phases: 5
   completed_phases: 4
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-25)
 
 **Core value:** International students can discover and search all English-taught higher education programs in Finland from a single, reliable source — and get step-by-step guidance on how to apply.
-**Current focus:** Phase 04 — user-features
+**Current focus:** Phase 05 — search-and-infrastructure
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 05 (search-and-infrastructure) — EXECUTING
+Plan: 1 of 5
 Plans: 4/4 complete
-Status: Ready to execute
-Last activity: 2026-05-01 -- Phase 05 planning complete
+Status: Executing Phase 05
+Last activity: 2026-05-01 -- Phase 05 execution started
 
 Progress: [██████████] 60% (v1.0 overall: 3/5 phases done)
 
