@@ -121,8 +121,11 @@ export class UniversitiesService {
   }
 
   private hasEnglish(row: any): boolean {
-    const m = row.nameMultilingual;
-    return m != null && typeof m === 'object' && 'en' in m;
+    const name = row.nameMultilingual;
+    if (name == null || typeof name !== 'object' || !('en' in name)) return false;
+    const desc = row.descriptionMultilingual;
+    if (desc == null || typeof desc !== 'object' || !('en' in desc)) return false;
+    return true;
   }
 
   private resolveLang(data: any, lng: string): string {
