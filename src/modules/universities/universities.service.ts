@@ -40,7 +40,7 @@ export class UniversitiesService {
     return result;
   }
 
-  async findOne(oid: string, _lng?: string) {
+  async findOne(oid: string) {
     const cacheKey = `universities:detail:${oid}`;
     const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached;

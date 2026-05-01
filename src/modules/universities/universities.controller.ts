@@ -13,8 +13,8 @@ export class UniversitiesController {
   }
 
   @Get(':oid')
-  findOne(@Param('oid') oid: string, @Query('lng') lng?: string) {
-    return this.universitiesService.findOne(oid, lng);
+  findOne(@Param('oid') oid: string) {
+    return this.universitiesService.findOne(oid);
   }
 
   @Get(':oid/programs')

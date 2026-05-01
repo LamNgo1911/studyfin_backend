@@ -13,7 +13,7 @@ export class ProgramsController {
   }
 
   @Get(':oid')
-  findOne(@Param('oid') oid: string, @Query('lng') lng?: string) {
-    return this.programsService.findOne(oid, lng);
+  findOne(@Param('oid') oid: string) {
+    return this.programsService.findOne(oid);
   }
 }

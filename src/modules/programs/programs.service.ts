@@ -44,7 +44,7 @@ export class ProgramsService {
     return result;
   }
 
-  async findOne(oid: string, _lng?: string) {
+  async findOne(oid: string) {
     const cacheKey = `programs:detail:${oid}`;
     const cached = await this.cacheManager.get(cacheKey);
     if (cached) return cached;
