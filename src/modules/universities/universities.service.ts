@@ -34,21 +34,22 @@ export class UniversitiesService {
           }
         : {};
 
-    const [total, rows] = await this.prisma.$transaction([
-      this.prisma.university.count({ where }),
-      this.prisma.university.findMany({
-        where,
-        skip: page * size,
-        take: size,
-        include: { locations: true },
-      }),
-    ]);
+    // Fetch all matching rows (no skip/take) so we can filter by English
+    // content and then paginate the filtered set accurately.
+    const allRows = await this.prisma.university.findMany({
+      where,
+      include: { locations: true },
+    });
+
+    const englishRows = allRows.filter((row: any) => this.hasEnglish(row));
+    const start = page * size;
+    const sliced = englishRows.slice(start, start + size);
 
     const result = {
-      total,
+      total: englishRows.length,
       page,
       size,
-      hits: rows.map((row) => this.mapUniversity(row, lng)),
+      hits: sliced.map((row) => this.mapUniversity(row, lng)),
     };
 
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
@@ -117,6 +118,11 @@ export class UniversitiesService {
 
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
     return result;
+  }
+
+  private hasEnglish(row: any): boolean {
+    const m = row.nameMultilingual;
+    return m != null && typeof m === 'object' && 'en' in m;
   }
 
   private resolveLang(data: any, lng: string): string {
