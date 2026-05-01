@@ -102,8 +102,9 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string): Promise<TokenPair> {
+    const tokenHash = this.hashToken(refreshToken);
     const auth = await this.prisma.auth.findFirst({
-      where: { refreshToken },
+      where: { refreshTokenHash: tokenHash },
       include: { user: true },
     });
 
@@ -205,6 +206,10 @@ export class AuthService {
     return crypto.randomBytes(32).toString('hex');
   }
 
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
   private async issueTokens(user: User): Promise<TokenPair> {
     const payload: JwtPayload = { sub: user.id, email: user.email };
 
@@ -215,11 +220,12 @@ export class AuthService {
     const refreshExpiration = process.env.JWT_REFRESH_EXPIRATION || '7d';
     const expiresAt = this.parseExpiration(refreshExpiration);
 
-    // Store refresh token in database
+    // Store refresh token hash in database
+    const tokenHash = this.hashToken(refreshToken);
     await this.prisma.auth.upsert({
       where: { userId: user.id },
-      update: { refreshToken, expiresAt },
-      create: { userId: user.id, refreshToken, expiresAt },
+      update: { refreshTokenHash: tokenHash, expiresAt },
+      create: { userId: user.id, refreshTokenHash: tokenHash, expiresAt },
     });
 
     return { accessToken, refreshToken };

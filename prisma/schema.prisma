@@ -137,12 +137,12 @@ model User {
 }
 
 model Auth {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refreshToken String
-  createdAt    DateTime @default(now())
-  expiresAt    DateTime
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String   // SHA-256 of the issued token; never store plaintext
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
 }
 
 // ─── User Saved Items ─────────────────────────────────────────────────────────
