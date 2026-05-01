@@ -6,7 +6,10 @@
 
 - **Runtime:** Node.js · TypeScript
 - **Framework:** [NestJS](https://nestjs.com/) v11
-- **ORM:** [Prisma](https://www.prisma.io/) v7 (PostgreSQL)
+- **ORM:** [Prisma](https://www.prisma.io/) v7 (PostgreSQL, full-text search)
+- **Caching:** Redis 7 (Keyv, cache-aside, 24h TTL)
+- **Rate Limiting:** `@nestjs/throttler` (100 req/60s global, 10/60s auth, 30/60s admin)
+- **API Docs:** Swagger (`@nestjs/swagger`) at `/api`
 - **Validation:** class-validator · class-transformer
 - **Infrastructure:** Docker Compose (PostgreSQL 16, Redis 7)
 - **Testing:** Jest · Supertest
@@ -25,14 +28,16 @@ src/
 │   └── utils/
 ├── config/                # App configuration
 ├── modules/
+│   ├── admin/             # Admin dashboard & user management
 │   ├── auth/              # JWT authentication
-│   ├── users/             # User management (scaffold)
-│   ├── universities/      # University data
-│   ├── search/            # Institution & program search (local DB)
-│   ├── programs/          # Study programs
-│   ├── sync/              # DB sync from Opintopolku API
+│   ├── users/             # User profile & saved programs
+│   ├── universities/      # University data (cached)
+│   ├── programs/          # Study programs (cached)
+│   ├── guidance/          # A-Z guidance content per program
+│   ├── search/            # Unified full-text search (cached)
+│   ├── sync/              # DB sync from Opintopolku API (admin-only)
 │   └── mock-tests/        # UAS entrance exam practice tests
-├── providers/             # External providers
+├── providers/             # External providers (PrismaService)
 └── main.ts
 ```
 
@@ -108,7 +113,7 @@ The server starts at **http://localhost:3000** by default.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/universities` | Paginated university list |
-| `GET` | `/universities/:oid` | University by OID (`lng` query param supported) |
+| `GET` | `/universities/:oid` | University by OID |
 | `GET` | `/universities/:oid/programs` | Programs for a university |
 
 ### Programs
@@ -116,29 +121,23 @@ The server starts at **http://localhost:3000** by default.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/programs` | List programs |
-| `GET` | `/programs/:oid` | Program by OID (`lng` query param supported) |
+| `GET` | `/programs/:oid` | Program by OID |
 
 ### Search
 
-Queries the local database.
+Full-text search across programs and institutions in the local database.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/search/institutions` | Search universities by keyword |
-| `GET` | `/search` | Search institutions or programs |
+| `GET` | `/search` | Unified full-text search |
 
-**Query parameters for `/search/institutions`:**
-- `keyword` — search term (min 3 chars)
-- `size` — results per page (1–50, default: 20)
-- `page` — page number (0-indexed, default: 0)
-
-**Query parameters for `/search`:**
+**Query parameters:**
 - `q` — search term
-- `type` — `institutions` or `programs` (default: `programs`)
+- `type` — `programs` or `institutions` (optional, omit for mixed results)
 - `size` — results per page (1–100, default: 20)
 - `page` — page number (0-indexed, default: 0)
 
-**`GET /search/institutions` response shape:**
+**Response shape:**
 ```json
 {
   "total": 50,
@@ -148,14 +147,25 @@ Queries the local database.
     {
       "oid": "1.2.246.562.10.56753942459",
       "name": "Aalto University",
-      "type": "yo",
+      "description": "...",
+      "type": "institution",
+      "itemType": "institution",
+      "logoUrl": "...",
       "municipality": "Helsinki",
       "website": "https://aalto.fi",
       "email": "info@aalto.fi",
       "studentCount": 15000,
-      "description": "...",
-      "logoUrl": "...",
       "locations": [{ "code": "kunta_091", "name": "Helsinki" }]
+    },
+    {
+      "oid": "1.2.246.562.20.12345678901",
+      "name": "Computer Science (BSc)",
+      "type": "program",
+      "itemType": "program",
+      "isDegree": true,
+      "fieldOfStudy": "Computer Science",
+      "teachingLanguages": ["en", "fi"],
+      "providers": [{ "oid": "...", "name": "Aalto University" }]
     }
   ]
 }
@@ -175,9 +185,30 @@ Queries the local database.
 
 ### Sync
 
+Admin-only endpoint to populate the local database from the Opintopolku API.
+
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/sync/run` | Sync universities and programs from Opintopolku into the DB (202 Accepted, runs in background) |
+| `POST` | `/sync/run` | Sync universities and programs from Opintopolku into the DB (202 Accepted, runs in background, requires ADMIN) |
+
+### Guidance
+
+A-Z guidance content per study program. Public read, admin-only write.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/guidance/:programOid` | Get guidance sections for a program |
+| `POST` | `/guidance/:programOid` | Create/replace guidance sections (requires ADMIN) |
+| `PATCH` | `/guidance/:programOid` | Partial update or delete guidance sections (requires ADMIN) |
+
+### Admin
+
+Administrative dashboard for user management.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/admin/users` | List all users — supports `email`, `page`, `size` query params (requires ADMIN) |
+| `PATCH` | `/admin/users/:id/mock-test-access` | Toggle mock test access for a user (requires ADMIN) |
 
 ### Mock Tests
 
@@ -202,6 +233,24 @@ Practice tests for UAS (Universities of Applied Sciences) entrance exams.
 - `size` — results per page (1–50, default: 20)
 - `page` — page number (0-indexed, default: 0)
 
+## Authentication
+
+JWT-based authentication using `@nestjs/passport` and `passport-jwt`. Routes marked _"requires auth"_ expect an `Authorization: Bearer <token>` header. Obtain a token via `POST /auth/login`. Admin routes additionally require the user to have the `ADMIN` role (checked by `RolesGuard`).
+
+## API Docs (Swagger)
+
+Interactive Swagger UI available at **`/api`** in development (`NODE_ENV !== 'production'`). Provides full endpoint documentation, request/response schemas, and in-browser testing. Disabled in production.
+
+## Rate Limiting
+
+Rate limits are enforced globally via `@nestjs/throttler`:
+
+| Scope | Limit | Window |
+|-------|-------|--------|
+| Global | 100 req | 60 sec |
+| Auth routes (`/auth/*`) | 10 req | 60 sec |
+| Admin routes (`/admin/*`) | 30 req | 60 sec |
+
 ## API Modules
 
 ### Auth
@@ -210,19 +259,31 @@ JWT-based authentication with access and refresh tokens. Supports user registrat
 
 ### Search
 
-Queries the local PostgreSQL database. No longer proxies the Opintopolku API directly — data is populated via `POST /sync/run`.
+PostgreSQL full-text search across program names/descriptions and institution names/descriptions. Results are cached in Redis (24h TTL). Supports filtering by type (`programs` or `institutions`).
 
 ### Users
 
-User profile management – CRUD operations (in development).
+User profile management — view and update profile, save/manage programs with application status tracking.
 
 ### Universities
 
-University data management (in development).
+University data served from local PostgreSQL with Redis cache-aside (24h TTL). Includes institution details, locations, and program associations.
 
 ### Programs
 
-University programs management
+Study program data served from local PostgreSQL with Redis cache-aside (24h TTL). Includes degree info, credits, teaching languages, and provider associations.
+
+### Guidance
+
+A-Z guidance content per program. Admin can create, update, and delete guidance sections for any program. Public read access for all guidance sections.
+
+### Admin
+
+Administrative dashboard for user management. List users with optional email filter and pagination. Toggle mock test access per user.
+
+### Sync
+
+Admin-triggered data sync from the Finnish national education API (Opintopolku). Fires-and-forgets: returns 202 Accepted immediately while sync runs in the background. Invalidates Redis caches after successful sync.
 
 ### Mock Tests
 
@@ -235,7 +296,9 @@ Prisma with PostgreSQL. The schema (`prisma/schema.prisma`) includes models for:
 - `Program`, `ProgramUniversity` — study programs and their university associations
 - `User`, `Auth` — user accounts and refresh token sessions
 - `UserProgram`, `UserUniversity` — user saved items
-- `MockTest` — practice test records
+- `GuidanceSection` — A-Z guidance content per program
+- `TestTemplate`, `Question`, `AnswerOption` — mock test definitions
+- `MockTest`, `MockTestAnswer` — user test attempts and responses
 
 Prisma client is generated to `generated/prisma` — import from there, not `@prisma/client`.
 
