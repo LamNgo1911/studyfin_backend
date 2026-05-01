@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { SyncService } from './sync.service';
 import { PrismaService } from '../../providers/prisma.service';
+import { Prisma } from '../../../generated/prisma';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 
@@ -119,6 +120,17 @@ describe('SyncService', () => {
         .mockReturnValueOnce(of(detailResponse));
 
       await service.syncInstitutions();
+
+      // Verify nameMultilingual is stored in the upsert call
+      const upsertCall = prisma.university.upsert.mock.calls[0][0];
+      expect(upsertCall.create.nameMultilingual).toEqual({
+        en: 'Test University',
+        fi: 'Test',
+      });
+      expect(upsertCall.update.nameMultilingual).toEqual({
+        en: 'Test University',
+        fi: 'Test',
+      });
 
       // Verify $transaction was called at least once (for the location upsert)
       expect(prisma.$transaction).toHaveBeenCalled();

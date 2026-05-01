@@ -135,6 +135,8 @@ export class SyncService {
         oid,
         name,
         description: resolveLang(metadata.esittely) || null,
+        nameMultilingual: hit.nimi ?? detail.nimi ?? Prisma.JsonNull,
+        descriptionMultilingual: metadata.esittely ?? Prisma.JsonNull,
         logoUrl: hit.logo ?? null,
         type: simpleType,
         municipality: resolveLang(detail.kotipaikka?.nimi) || null,
@@ -151,6 +153,8 @@ export class SyncService {
       update: {
         name,
         description: resolveLang(metadata.esittely) || null,
+        nameMultilingual: hit.nimi ?? detail.nimi ?? Prisma.JsonNull,
+        descriptionMultilingual: metadata.esittely ?? Prisma.JsonNull,
         logoUrl: hit.logo ?? null,
         type: simpleType,
         municipality: resolveLang(detail.kotipaikka?.nimi) || null,
