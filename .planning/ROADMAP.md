@@ -108,10 +108,10 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md — Infrastructure foundation: npm packages, Prisma full-text search, ConfigModule/CacheModule/ThrottlerModule, Swagger bootstrap
-- [ ] 05-02-PLAN.md — Unified search rewrite: full-text search with relevance scoring, mixed results, type discriminator
+- [x] 05-02-PLAN.md — Unified search rewrite: full-text search with relevance scoring, mixed results, type discriminator
 - [ ] 05-03-PLAN.md — Caching layer: cache-aside on programs/universities/search services, sync-triggered invalidation
-- [ ] 05-04-PLAN.md — Controller decorators: @ApiTags on public controllers + @Throttle overrides for auth/admin (Wave 2)
-- [ ] 05-05-PLAN.md — DTO decorators: @ApiProperty / @ApiPropertyOptional on 12 input DTO files (Wave 2, parallel with 04)
+- [x] 05-04-PLAN.md — Controller decorators: @ApiTags on public controllers + @Throttle overrides for auth/admin (Wave 2)
+- [x] 05-05-PLAN.md — DTO decorators: @ApiProperty / @ApiPropertyOptional on 12 input DTO files (Wave 2, parallel with 04)
 
 ## Progress
 
