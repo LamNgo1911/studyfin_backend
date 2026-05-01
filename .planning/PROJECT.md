@@ -29,8 +29,8 @@ International students can discover and search all English-taught higher educati
 - [ ] Program-specific info pages API (requirements, deadlines, what to expect)
 - [ ] Admin API endpoints for managing guidance content and mock test templates
 - [ ] Homepage search API (institutions + programs, unified search)
-- [ ] User-program relationships (saved/favorited programs, application tracking)
-- [ ] Manual access gating for mock tests (admin-set flag, no payment integration yet)
+- ✓ User-program relationships (saved/favorited programs, application tracking) — Validated in Phase 04
+- ✓ Manual access gating for mock tests (admin-set flag, no payment integration yet) — Validated in Phase 04
 
 ### Out of Scope
 
@@ -67,7 +67,7 @@ International students can discover and search all English-taught higher educati
 |----------|-----------|---------|
 | Filter English programs at sync time, not query time | Keeps DB focused, simpler queries, less storage waste | ✓ Done (Phase 01) |
 | Serve all data from local DB, retire Opintopolku live proxy | Avoids rate limits, normalizes Finnish field mess, faster responses | ✓ Done (Phase 02) |
-| Manual access gating for mock tests (no payment integration) | Keeps v1 simple; payment integration deferred to future milestone | — Pending |
+| Manual access gating for mock tests (no payment integration) | Keeps v1 simple; payment integration deferred to future milestone | ✓ Done (Phase 04) |
 | Semi-automated guidance content (Opintopolku data + manual editorial) | Balance between automation and content quality | — Pending |
 | Admin API endpoints only (no admin UI) | Frontend team handles admin panel in separate repo | — Pending |
 
@@ -89,4 +89,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after Phase 02 completion*
+*Last updated: 2026-05-01 after Phase 04 completion*
