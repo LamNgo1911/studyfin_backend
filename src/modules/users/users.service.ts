@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { PrismaService } from '../../providers/prisma.service';
 import { User } from '../../../generated/prisma';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { UpdateSavedProgramDto } from './dto/save-program.dto';
+import { UpdateSavedProgramDto } from './dto/update-saved-program.dto';
 import { ListSavedProgramsQueryDto } from './dto/list-saved-programs-query.dto';
 
 export interface CreateUserInput {
@@ -226,23 +226,32 @@ export class UsersService {
   }
 
   async listSavedPrograms(userId: string, query: ListSavedProgramsQueryDto) {
+    const { status, page = 0, size = 20 } = query;
+
     const where = {
       userId,
-      ...(query.status && { status: query.status }),
+      ...(status && { status }),
     };
 
-    return this.prisma.userProgram.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        programId: true,
-        status: true,
-        createdAt: true,
-        program: {
-          select: { name: true, oid: true, type: true, fieldOfStudy: true },
+    const [total, programs] = await Promise.all([
+      this.prisma.userProgram.count({ where }),
+      this.prisma.userProgram.findMany({
+        where,
+        skip: page * size,
+        take: size,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          programId: true,
+          status: true,
+          createdAt: true,
+          program: {
+            select: { name: true, oid: true, type: true, fieldOfStudy: true },
+          },
         },
-      },
-    });
+      }),
+    ]);
+
+    return { total, page, size, programs };
   }
 }
