@@ -194,35 +194,39 @@ export class UsersService {
     programId: string,
     dto: UpdateSavedProgramDto,
   ) {
-    const existing = await this.prisma.userProgram.findUnique({
-      where: { userId_programId: { userId, programId } },
-    });
-    if (!existing) throw new NotFoundException('Saved program not found');
-
-    return this.prisma.userProgram.update({
-      where: { userId_programId: { userId, programId } },
-      data: { status: dto.status },
-      select: {
-        id: true,
-        programId: true,
-        status: true,
-        createdAt: true,
-        program: {
-          select: { name: true, oid: true, type: true, fieldOfStudy: true },
+    try {
+      return await this.prisma.userProgram.update({
+        where: { userId_programId: { userId, programId } },
+        data: { status: dto.status },
+        select: {
+          id: true,
+          programId: true,
+          status: true,
+          createdAt: true,
+          program: {
+            select: { name: true, oid: true, type: true, fieldOfStudy: true },
+          },
         },
-      },
-    });
+      });
+    } catch (err: any) {
+      if (err?.code === 'P2025') {
+        throw new NotFoundException('Saved program not found');
+      }
+      throw err;
+    }
   }
 
   async removeSavedProgram(userId: string, programId: string) {
-    const existing = await this.prisma.userProgram.findUnique({
-      where: { userId_programId: { userId, programId } },
-    });
-    if (!existing) throw new NotFoundException('Saved program not found');
-
-    await this.prisma.userProgram.delete({
-      where: { userId_programId: { userId, programId } },
-    });
+    try {
+      await this.prisma.userProgram.delete({
+        where: { userId_programId: { userId, programId } },
+      });
+    } catch (err: any) {
+      if (err?.code === 'P2025') {
+        throw new NotFoundException('Saved program not found');
+      }
+      throw err;
+    }
   }
 
   async listSavedPrograms(userId: string, query: ListSavedProgramsQueryDto) {
