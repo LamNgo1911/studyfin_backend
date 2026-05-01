@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { UnifiedSearchQueryDto } from './dto/search-query.dto';
 import { SearchHitDto } from './dto/search-response.dto';
 import { PrismaService } from '../../providers/prisma.service';
 
 @Injectable()
 export class SearchService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   async search(query: UnifiedSearchQueryDto): Promise<{
     total: number;
@@ -17,6 +22,16 @@ export class SearchService {
     const type = query.type;
     const page = query.page ?? 0;
     const size = query.size ?? 20;
+
+    // Cache-aside
+    const cacheKey = `search:${JSON.stringify(query)}`;
+    const cached = await this.cacheManager.get<{
+      total: number;
+      page: number;
+      size: number;
+      hits: SearchHitDto[];
+    }>(cacheKey);
+    if (cached) return cached;
 
     // Program-specific where with full-text search when q is provided
     const progWhere = q
@@ -37,16 +52,19 @@ export class SearchService {
       ? [{ _relevance: { search: q, fields: ['name', 'description'] as const, sort: 'desc' as const } }]
       : [{ name: 'asc' as const }];
 
+    let result: { total: number; page: number; size: number; hits: SearchHitDto[] };
+
     if (type === 'programs') {
-      return this.searchProgramsOnly(progWhere, progOrderBy, page, size);
+      result = await this.searchProgramsOnly(progWhere, progOrderBy, page, size);
+    } else if (type === 'institutions') {
+      result = await this.searchInstitutionsOnly(uniWhere, uniOrderBy, page, size);
+    } else {
+      // Mixed: query both types, merge with relevance-first ordering
+      result = await this.searchMixed(progWhere, uniWhere, progOrderBy, uniOrderBy, page, size);
     }
 
-    if (type === 'institutions') {
-      return this.searchInstitutionsOnly(uniWhere, uniOrderBy, page, size);
-    }
-
-    // Mixed: query both types, merge with relevance-first ordering
-    return this.searchMixed(progWhere, uniWhere, progOrderBy, uniOrderBy, page, size);
+    await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
+    return result;
   }
 
   private async searchProgramsOnly(

@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { HttpService } from '@nestjs/axios';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
@@ -17,6 +19,7 @@ export class SyncService {
   constructor(
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
@@ -38,6 +41,11 @@ export class SyncService {
       this.logger.log(
         `Sync complete: ${institutionCount} institutions, ${programCount} programs`,
       );
+
+      // Invalidate cache after successful sync (D-04)
+      await this.cacheManager.clear();
+      this.logger.log('Cache invalidated after sync');
+
       return { institutions: institutionCount, programs: programCount };
     } finally {
       this.isSyncing = false;

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UniversitiesService } from './universities.service';
 import { PrismaService } from '../../providers/prisma.service';
 
@@ -46,6 +47,10 @@ describe('UniversitiesService', () => {
       providers: [
         UniversitiesService,
         { provide: PrismaService, useValue: prisma },
+        {
+          provide: CACHE_MANAGER,
+          useValue: { get: jest.fn(), set: jest.fn() },
+        },
       ],
     }).compile();
 

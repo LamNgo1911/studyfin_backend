@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { SearchService } from './search.service';
 import { PrismaService } from '../../providers/prisma.service';
 
@@ -60,7 +61,14 @@ describe('SearchService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SearchService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        SearchService,
+        { provide: PrismaService, useValue: prisma },
+        {
+          provide: CACHE_MANAGER,
+          useValue: { get: jest.fn(), set: jest.fn() },
+        },
+      ],
     }).compile();
 
     service = module.get(SearchService);

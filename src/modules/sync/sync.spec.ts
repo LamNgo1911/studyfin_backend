@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { SyncService } from './sync.service';
 import { PrismaService } from '../../providers/prisma.service';
 import { HttpService } from '@nestjs/axios';
@@ -52,6 +53,10 @@ describe('SyncService', () => {
         SyncService,
         { provide: PrismaService, useValue: prisma },
         { provide: HttpService, useValue: httpService },
+        {
+          provide: CACHE_MANAGER,
+          useValue: { get: jest.fn(), set: jest.fn(), clear: jest.fn() },
+        },
       ],
     }).compile();
 
