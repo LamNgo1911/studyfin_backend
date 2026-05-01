@@ -141,9 +141,10 @@ describe('GuidanceService', () => {
 
     it('upserts provided sections and returns all sections sorted by order', async () => {
       prisma.program.findUnique.mockResolvedValue({ oid: 'prog-oid-123' });
-      // $transaction uses array form for patch — mock to execute all promises
-      prisma.$transaction.mockImplementation(async (ops: any[]) => Promise.all(ops));
+      // $transaction uses interactive (callback-based) form for patch
+      prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
       prisma.guidanceSection.upsert.mockResolvedValue({ ...mockSection, title: 'Updated Title', order: 2 });
+      prisma.guidanceSection.deleteMany.mockResolvedValue({ count: 0 });
       prisma.guidanceSection.findMany.mockResolvedValue([{ ...mockSection, title: 'Updated Title', order: 2 }]);
 
       const result = await service.patch('prog-oid-123', dto as any);
@@ -156,7 +157,7 @@ describe('GuidanceService', () => {
       expect(result[0].title).toBe('Updated Title');
     });
 
-    it('throws BadRequestException when dto.sections is empty', async () => {
+    it('throws BadRequestException when dto.sections and dto.deleteKeys are both empty', async () => {
       prisma.program.findUnique.mockResolvedValue({ oid: 'prog-oid-123' });
 
       await expect(

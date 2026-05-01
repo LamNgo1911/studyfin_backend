@@ -62,31 +62,37 @@ export class GuidanceService {
     if (!program)
       throw new NotFoundException(`Program not found: ${programOid}`);
 
-    if (!dto.sections || dto.sections.length === 0) {
+    if (
+      (!dto.sections || dto.sections.length === 0) &&
+      (!dto.deleteKeys || dto.deleteKeys.length === 0)
+    ) {
       throw new BadRequestException(
-        'sections must contain at least one entry',
+        'At least one of sections or deleteKeys must be provided',
       );
     }
 
-    await this.prisma.$transaction(
-      dto.sections.map((s) =>
-        this.prisma.guidanceSection.upsert({
-          where: { programOid_key: { programOid, key: s.key } },
-          update: {
-            title: s.title,
-            body: s.body,
-            order: s.order,
-          },
-          create: {
-            programOid,
-            key: s.key,
-            title: s.title,
-            body: s.body,
-            order: s.order,
-          },
-        }),
-      ),
-    );
+    await this.prisma.$transaction(async (tx) => {
+      if (dto.deleteKeys && dto.deleteKeys.length > 0) {
+        await tx.guidanceSection.deleteMany({
+          where: { programOid, key: { in: dto.deleteKeys } },
+        });
+      }
+      if (dto.sections && dto.sections.length > 0) {
+        for (const s of dto.sections) {
+          await tx.guidanceSection.upsert({
+            where: { programOid_key: { programOid, key: s.key } },
+            update: { title: s.title, body: s.body, order: s.order },
+            create: {
+              programOid,
+              key: s.key,
+              title: s.title,
+              body: s.body,
+              order: s.order,
+            },
+          });
+        }
+      }
+    });
 
     const sections = await this.prisma.guidanceSection.findMany({
       where: { programOid },
