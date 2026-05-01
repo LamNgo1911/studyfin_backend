@@ -103,7 +103,14 @@ Plans:
   3. Program list and search responses are served from Redis cache on repeat requests within the 24-hour TTL
   4. Excessive requests to public and admin endpoints are rejected with 429 after the configured threshold
   5. Swagger UI is accessible at `/api` and documents all key endpoints and their DTOs
+**Plans**: 4 plans
 **UI hint**: no
+
+Plans:
+- [ ] 05-01-PLAN.md — Infrastructure foundation: npm packages, Prisma full-text search, ConfigModule/CacheModule/ThrottlerModule, Swagger bootstrap
+- [ ] 05-02-PLAN.md — Unified search rewrite: full-text search with relevance scoring, mixed results, type discriminator
+- [ ] 05-03-PLAN.md — Caching layer: cache-aside on programs/universities/search services, sync-triggered invalidation
+- [ ] 05-04-PLAN.md — Swagger docs + throttle overrides: @ApiTags on public controllers, @ApiProperty on input DTOs, auth/admin rate limits
 
 ## Progress
 
@@ -116,4 +123,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. DB-Backed APIs | 3/3 | Complete | 2026-04-28 |
 | 3. Guidance Content | 2/4 | In Progress|  |
 | 4. User Features | 0/4 | Not started | - |
-| 5. Search and Infrastructure | 0/TBD | Not started | - |
+| 5. Search and Infrastructure | 0/4 | Planned | - |
