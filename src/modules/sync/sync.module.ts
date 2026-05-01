@@ -4,7 +4,7 @@ import { SyncController } from './sync.controller';
 import { SyncService } from './sync.service';
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule.register({ timeout: 10000 })],
   controllers: [SyncController],
   providers: [SyncService],
 })

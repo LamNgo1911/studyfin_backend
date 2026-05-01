@@ -9,7 +9,7 @@ import { OPINTOPOLKU_BASE } from '../../config/opintopolku.config';
 import { Prisma } from '../../../generated/prisma';
 
 const PAGE_SIZE = 100;
-const EDUCATION_TYPES = 'yo,amk,amm';
+const EDUCATION_TYPES = 'yo,amk';
 
 @Injectable()
 export class SyncService {
