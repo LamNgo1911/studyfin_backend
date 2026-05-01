@@ -1,44 +1,19 @@
-import {
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-  MinLength,
-} from 'class-validator';
-
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-export class SearchQueryDto {
+export class UnifiedSearchQueryDto {
+  @ApiPropertyOptional({ description: 'Search keyword for full-text matching' })
   @IsOptional()
   @IsString()
-  @MinLength(3)
-  keyword?: string;
+  q?: string;
 
+  @ApiPropertyOptional({ enum: ['programs', 'institutions'], description: 'Filter to only programs or only institutions. Omit for both.' })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  size?: number = 20;
+  @IsIn(['programs', 'institutions'])
+  type?: 'programs' | 'institutions';
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  page?: number = 0;
-}
-
-export class DbSearchQueryDto {
-  @IsOptional()
-  @IsString()
-  q?: string = '';
-
-  @IsOptional()
-  @IsIn(['institutions', 'programs'])
-  type?: 'institutions' | 'programs' = 'programs';
-
+  @ApiPropertyOptional({ default: 20, description: 'Results per page (max 100)' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -46,6 +21,7 @@ export class DbSearchQueryDto {
   @Max(100)
   size?: number = 20;
 
+  @ApiPropertyOptional({ default: 0, description: 'Page number (0-indexed)' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
