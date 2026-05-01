@@ -87,8 +87,8 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md — Add hasTestAccess to User schema + npx prisma db push [BLOCKING] (Wave 1)
-- [ ] 04-02-PLAN.md — UsersService profile/saved-program methods + DTOs (Wave 2)
-- [ ] 04-03-PLAN.md — MockTestsService hasTestAccess guard + AdminModule controller/service/DTOs (Wave 2, parallel)
+- [x] 04-02-PLAN.md — UsersService profile/saved-program methods + DTOs (Wave 2)
+- [x] 04-03-PLAN.md — MockTestsService hasTestAccess guard + AdminModule controller/service/DTOs (Wave 2, parallel)
 - [ ] 04-04-PLAN.md — UsersController routes + AdminModule AppModule registration + unit tests (Wave 3)
 
 **UI hint**: no
