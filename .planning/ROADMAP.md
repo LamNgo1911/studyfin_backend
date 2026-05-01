@@ -83,6 +83,14 @@ Plans:
   3. A user can save, update status on, and remove a program from their shortlist via the `/users/me/programs` endpoints
   4. `GET /users/me/programs` returns the authenticated user's full saved-program list
   5. Attempting to start a mock test without `hasTestAccess` returns 403; an admin can grant or revoke that flag
+**Plans**: 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Add hasTestAccess to User schema + npx prisma db push [BLOCKING] (Wave 1)
+- [ ] 04-02-PLAN.md — UsersService profile/saved-program methods + DTOs (Wave 2)
+- [ ] 04-03-PLAN.md — MockTestsService hasTestAccess guard + AdminModule controller/service/DTOs (Wave 2, parallel)
+- [ ] 04-04-PLAN.md — UsersController routes + AdminModule AppModule registration + unit tests (Wave 3)
+
 **UI hint**: no
 
 ### Phase 5: Search and Infrastructure
@@ -107,5 +115,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. RBAC Foundation | 4/4 | Complete (SC #4 DB cleanup pending operational step) | 2026-04-28 |
 | 2. DB-Backed APIs | 3/3 | Complete | 2026-04-28 |
 | 3. Guidance Content | 2/4 | In Progress|  |
-| 4. User Features | 0/TBD | Not started | - |
+| 4. User Features | 0/4 | Not started | - |
 | 5. Search and Infrastructure | 0/TBD | Not started | - |
