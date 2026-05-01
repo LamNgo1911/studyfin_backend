@@ -49,7 +49,7 @@ Add @ApiProperty and @ApiPropertyOptional decorators to all 12 public input DTOs
 
 ## Commit History
 
-No new commits required -- all 12 DTO files already had correct decorators committed by parallel worktree agents (plans 05-02 and 05-04) whose changes were merged into this worktree before execution.
+Committed in `47865be` (co-committed with 05-02 SUMMARY). All 12 DTO files already had correct decorators committed by parallel worktree agents in plans 05-02 and 05-04 whose changes were merged into this worktree before execution.
 
 | DTO File | Fields Decorated | Count |
 |----------|-----------------|-------|
