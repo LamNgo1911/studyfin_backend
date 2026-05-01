@@ -6,6 +6,7 @@ import {
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import {
   RegisterDto,
@@ -21,6 +22,7 @@ import {
   CurrentUserData,
 } from '../../common/decorators/current-user.decorator';
 
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
