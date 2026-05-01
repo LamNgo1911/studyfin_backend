@@ -11,6 +11,7 @@ import { MockTestsModule } from './modules/mock-tests/mock-tests.module';
 import { PrismaModule } from './providers/prisma.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { GuidanceModule } from './modules/guidance/guidance.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { GuidanceModule } from './modules/guidance/guidance.module';
     ProgramsModule,
     GuidanceModule,
     MockTestsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

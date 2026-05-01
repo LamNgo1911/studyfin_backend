@@ -104,6 +104,17 @@ export class MockTestsService {
   }
 
   async startTest(userId: string, dto: StartMockTestDto) {
+    // USER-09: Check mock test access before anything else (per D-09)
+    const userAccess = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { hasTestAccess: true },
+    });
+    if (!userAccess || !userAccess.hasTestAccess) {
+      throw new ForbiddenException(
+        'Mock test access is not enabled for your account',
+      );
+    }
+
     // Check template exists and is active
     const template = await this.prisma.testTemplate.findUnique({
       where: { id: dto.templateId },
