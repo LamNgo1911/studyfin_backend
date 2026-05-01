@@ -6,6 +6,7 @@ import {
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import {
@@ -22,6 +23,8 @@ import {
   CurrentUserData,
 } from '../../common/decorators/current-user.decorator';
 
+@ApiTags('Auth')
+@ApiBearerAuth()
 @Throttle({ default: { limit: 10, ttl: 60000 } })
 @Controller('auth')
 export class AuthController {

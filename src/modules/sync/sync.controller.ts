@@ -1,6 +1,8 @@
 import { Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SyncService } from './sync.service';
 
+@ApiTags('Sync')
 @Controller('sync')
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}
