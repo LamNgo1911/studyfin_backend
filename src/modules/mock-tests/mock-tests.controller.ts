@@ -24,6 +24,7 @@ export class MockTestsController {
   constructor(private readonly mockTestsService: MockTestsService) {}
 
   @Get('templates')
+  @UseGuards(JwtAuthGuard)
   listTemplates(
     @Query(new ValidationPipe({ transform: true, whitelist: true }))
     query: ListTemplatesQueryDto,
@@ -32,6 +33,7 @@ export class MockTestsController {
   }
 
   @Get('templates/:id')
+  @UseGuards(JwtAuthGuard)
   getTemplate(@Param('id') id: string) {
     return this.mockTestsService.getTemplate(id);
   }
