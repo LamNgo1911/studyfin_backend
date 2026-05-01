@@ -22,13 +22,17 @@ International students can discover and search all English-taught higher educati
 - ✓ Global PrismaService with PostgreSQL adapter — existing
 - ✓ English-only program filtering at sync time (Phase 01; cleanup script ready, DB cleanup pending operational run)
 - ✓ Clean API layer — programs and universities served from local PostgreSQL, Opintopolku live proxy retired (Phase 02)
+- ✓ Unified full-text search with relevance scoring — programs and institutions searchable from single endpoint (Phase 05)
+- ✓ Redis caching with 24h TTL on programs, universities, and search (Phase 05)
+- ✓ Global rate limiting (100 req/60s) with stricter auth/admin overrides (Phase 05)
+- ✓ Swagger API documentation at /api with field-level DTO schemas (Phase 05)
 
 ### Active
 
 - [ ] A-Z guidance content system (application steps, visa, housing, costs per program)
 - [ ] Program-specific info pages API (requirements, deadlines, what to expect)
 - [ ] Admin API endpoints for managing guidance content and mock test templates
-- [ ] Homepage search API (institutions + programs, unified search)
+- ✓ Homepage search API (institutions + programs, unified search) — Validated in Phase 05
 - ✓ User-program relationships (saved/favorited programs, application tracking) — Validated in Phase 04
 - ✓ Manual access gating for mock tests (admin-set flag, no payment integration yet) — Validated in Phase 04
 
@@ -89,4 +93,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-01 after Phase 04 completion*
+*Last updated: 2026-05-01 after Phase 05 completion*
