@@ -188,6 +188,17 @@ export class MockTestsService {
   }
 
   async submitAnswers(userId: string, testId: string, dto: SubmitAnswersDto) {
+    // Check mock test access before anything else
+    const userAccess = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { hasTestAccess: true },
+    });
+    if (!userAccess || !userAccess.hasTestAccess) {
+      throw new ForbiddenException(
+        'Mock test access is not enabled for your account',
+      );
+    }
+
     // Get the mock test with template and questions
     const mockTest = await this.prisma.mockTest.findUnique({
       where: { id: testId },
@@ -361,6 +372,17 @@ export class MockTestsService {
   }
 
   async getHistory(userId: string, query: MockTestHistoryQueryDto) {
+    // Check mock test access before anything else
+    const userAccess = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { hasTestAccess: true },
+    });
+    if (!userAccess || !userAccess.hasTestAccess) {
+      throw new ForbiddenException(
+        'Mock test access is not enabled for your account',
+      );
+    }
+
     const { status, size = 20, page = 0 } = query;
 
     const where = {
