@@ -102,22 +102,21 @@ export class SearchService {
     page: number,
     size: number,
   ) {
-    const [total, rows] = await this.prisma.$transaction([
-      this.prisma.university.count({ where }),
-      this.prisma.university.findMany({
-        where,
-        orderBy,
-        skip: page * size,
-        take: size,
-        include: { locations: true },
-      }),
-    ]);
+    const allRows = await this.prisma.university.findMany({
+      where,
+      orderBy,
+      include: { locations: true },
+    });
+
+    const englishRows = allRows.filter((u: any) => this.hasEnglish(u));
+    const start = page * size;
+    const sliced = englishRows.slice(start, start + size);
 
     return {
-      total,
+      total: englishRows.length,
       page,
       size,
-      hits: rows.map((u) => this.mapInstitutionHit(u)),
+      hits: sliced.map((u) => this.mapInstitutionHit(u)),
     };
   }
 
@@ -157,14 +156,29 @@ export class SearchService {
     ]);
 
     // Program hits first (more specific results), then institution hits.
-    const progHits = programs.map((p) => this.mapProgramHit(p));
-    const uniHits = universities.map((u) => this.mapInstitutionHit(u));
+    // Filter to only items with English university content.
+    const progHits = programs
+      .filter((p: any) =>
+        (p.universities ?? []).some((pu: any) => this.hasEnglish(pu.university)),
+      )
+      .map((p) => this.mapProgramHit(p));
+    const uniHits = universities
+      .filter((u: any) => this.hasEnglish(u))
+      .map((u) => this.mapInstitutionHit(u));
     const merged = [...progHits, ...uniHits];
 
     const total = progTotal + uniTotal;
     const paginated = merged.slice(0, size);
 
     return { total, page, size, hits: paginated };
+  }
+
+  private hasEnglish(row: any): boolean {
+    const name = row.nameMultilingual;
+    if (name == null || typeof name !== 'object' || !('en' in name)) return false;
+    const desc = row.descriptionMultilingual;
+    if (desc == null || typeof desc !== 'object' || !('en' in desc)) return false;
+    return true;
   }
 
   private resolveLang(data: any): string {
@@ -192,14 +206,16 @@ export class SearchService {
       degreeTitles: row.degreeTitles ?? [],
       teachingLanguages: row.teachingLanguages ?? [],
       implementations: row.implementations ?? undefined,
-      providers: (row.universities ?? []).map((pu: any) => ({
-        oid: pu.university.oid,
-        name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
-        locations: (pu.university.locations ?? []).map((l: any) => ({
-          code: l.code,
-          name: l.name,
+      providers: (row.universities ?? [])
+        .filter((pu: any) => this.hasEnglish(pu.university))
+        .map((pu: any) => ({
+          oid: pu.university.oid,
+          name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
+          locations: (pu.university.locations ?? []).map((l: any) => ({
+            code: l.code,
+            name: l.name,
+          })),
         })),
-      })),
     };
   }
 

@@ -20,24 +20,26 @@ export class ProgramsService {
     const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
     const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
 
-    const [total, rows] = await this.prisma.$transaction([
-      this.prisma.program.count(),
-      this.prisma.program.findMany({
-        skip: page * size,
-        take: size,
-        include: {
-          universities: {
-            include: { university: { select: { oid: true, name: true, nameMultilingual: true } } },
-          },
+    const allRows = await this.prisma.program.findMany({
+      include: {
+        universities: {
+          include: { university: { select: { oid: true, name: true, nameMultilingual: true, descriptionMultilingual: true } } },
         },
-      }),
-    ]);
+      },
+    });
+
+    const englishRows = allRows.filter((row: any) =>
+      this.programHasEnglishUniversity(row),
+    );
+    const total = englishRows.length;
+    const start = page * size;
+    const sliced = englishRows.slice(start, start + size);
 
     const result = {
       total,
       page,
       size,
-      hits: rows.map((row) => this.mapProgram(row)),
+      hits: sliced.map((row) => this.mapProgram(row)),
     };
 
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
@@ -53,16 +55,33 @@ export class ProgramsService {
       where: { oid },
       include: {
         universities: {
-          include: { university: { select: { oid: true, name: true, nameMultilingual: true } } },
+          include: { university: { select: { oid: true, name: true, nameMultilingual: true, descriptionMultilingual: true } } },
         },
         _count: { select: { guidanceSections: true } },
       },
     });
     if (!program) throw new NotFoundException(`Program not found: ${oid}`);
 
+    if (!this.programHasEnglishUniversity(program))
+      throw new NotFoundException(`Program not found: ${oid}`);
+
     const result = this.mapProgramDetail(program);
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
     return result;
+  }
+
+  private hasEnglish(row: any): boolean {
+    const name = row.nameMultilingual;
+    if (name == null || typeof name !== 'object' || !('en' in name)) return false;
+    const desc = row.descriptionMultilingual;
+    if (desc == null || typeof desc !== 'object' || !('en' in desc)) return false;
+    return true;
+  }
+
+  private programHasEnglishUniversity(row: any): boolean {
+    return (row.universities ?? []).some((pu: any) =>
+      this.hasEnglish(pu.university),
+    );
   }
 
   private resolveLang(data: any): string {
@@ -83,10 +102,12 @@ export class ProgramsService {
       creditsAmount: row.creditsAmount ?? null,
       creditsUnit: row.creditsUnit ?? null,
       teachingLanguages: row.teachingLanguages ?? [],
-      providers: (row.universities ?? []).map((pu: any) => ({
-        oid: pu.university.oid,
-        name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
-      })),
+      providers: (row.universities ?? [])
+        .filter((pu: any) => this.hasEnglish(pu.university))
+        .map((pu: any) => ({
+          oid: pu.university.oid,
+          name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
+        })),
     };
   }
 
@@ -108,10 +129,12 @@ export class ProgramsService {
       teachingLanguages: row.teachingLanguages ?? [],
       implementations: row.implementations ?? null,
       hasGuidance: (row._count?.guidanceSections ?? 0) > 0,
-      universities: (row.universities ?? []).map((pu: any) => ({
-        oid: pu.university.oid,
-        name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
-      })),
+      universities: (row.universities ?? [])
+        .filter((pu: any) => this.hasEnglish(pu.university))
+        .map((pu: any) => ({
+          oid: pu.university.oid,
+          name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
+        })),
     };
   }
 }
