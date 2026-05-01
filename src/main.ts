@@ -8,6 +8,9 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  // Global API prefix
+  app.setGlobalPrefix('api/v1', { exclude: ['/'] });
+
   // Swagger — exposed in non-production environments only
   if (process.env.NODE_ENV !== 'production') {
     const swaggerConfig = new DocumentBuilder()
@@ -17,7 +20,7 @@ async function bootstrap() {
       .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('api', app, document);
+    SwaggerModule.setup('api/docs', app, document);
   }
 
   // CORS

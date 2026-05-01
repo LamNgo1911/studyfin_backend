@@ -9,7 +9,7 @@
 - **ORM:** [Prisma](https://www.prisma.io/) v7 (PostgreSQL, full-text search)
 - **Caching:** Redis 7 (Keyv, cache-aside, 24h TTL)
 - **Rate Limiting:** `@nestjs/throttler` (100 req/60s global, 10/60s auth, 30/60s admin)
-- **API Docs:** Swagger (`@nestjs/swagger`) at `/api`
+- **API Docs:** Swagger (`@nestjs/swagger`) at `/api/docs`
 - **Validation:** class-validator · class-transformer
 - **Infrastructure:** Docker Compose (PostgreSQL 16, Redis 7)
 - **Testing:** Jest · Supertest
@@ -112,16 +112,16 @@ The server starts at **http://localhost:3000** by default.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/universities` | Paginated university list |
-| `GET` | `/universities/:oid` | University by OID |
-| `GET` | `/universities/:oid/programs` | Programs for a university |
+| `GET` | `/api/v1/universities` | Paginated university list |
+| `GET` | `/api/v1/universities/:oid` | University by OID |
+| `GET` | `/api/v1/universities/:oid/programs` | Programs for a university |
 
 ### Programs
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/programs` | List programs |
-| `GET` | `/programs/:oid` | Program by OID |
+| `GET` | `/api/v1/programs` | List programs |
+| `GET` | `/api/v1/programs/:oid` | Program by OID |
 
 ### Search
 
@@ -129,7 +129,7 @@ Full-text search across programs and institutions in the local database.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/search` | Unified full-text search |
+| `GET` | `/api/v1/search` | Unified full-text search |
 
 **Query parameters:**
 - `q` — search term
@@ -175,13 +175,13 @@ Full-text search across programs and institutions in the local database.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/auth/register` | Register a new user |
-| `POST` | `/auth/verify-email` | Verify email with token |
-| `POST` | `/auth/login` | Login and receive JWT tokens |
-| `POST` | `/auth/refresh` | Refresh access token |
-| `POST` | `/auth/forgot-password` | Request password reset email |
-| `POST` | `/auth/reset-password` | Reset password with token |
-| `GET` | `/auth/me` | Get current user profile (requires auth) |
+| `POST` | `/api/v1/auth/register` | Register a new user |
+| `POST` | `/api/v1/auth/verify-email` | Verify email with token |
+| `POST` | `/api/v1/auth/login` | Login and receive JWT tokens |
+| `POST` | `/api/v1/auth/refresh` | Refresh access token |
+| `POST` | `/api/v1/auth/forgot-password` | Request password reset email |
+| `POST` | `/api/v1/auth/reset-password` | Reset password with token |
+| `GET` | `/api/v1/auth/me` | Get current user profile (requires auth) |
 
 ### Sync
 
@@ -189,7 +189,7 @@ Admin-only endpoint to populate the local database from the Opintopolku API.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/sync/run` | Sync universities and programs from Opintopolku into the DB (202 Accepted, runs in background, requires ADMIN) |
+| `POST` | `/api/v1/sync/run` | Sync universities and programs from Opintopolku into the DB (202 Accepted, runs in background, requires ADMIN) |
 
 ### Guidance
 
@@ -197,9 +197,9 @@ A-Z guidance content per study program. Public read, admin-only write.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/guidance/:programOid` | Get guidance sections for a program |
-| `POST` | `/guidance/:programOid` | Create/replace guidance sections (requires ADMIN) |
-| `PATCH` | `/guidance/:programOid` | Partial update or delete guidance sections (requires ADMIN) |
+| `GET` | `/api/v1/guidance/:programOid` | Get guidance sections for a program |
+| `POST` | `/api/v1/guidance/:programOid` | Create/replace guidance sections (requires ADMIN) |
+| `PATCH` | `/api/v1/guidance/:programOid` | Partial update or delete guidance sections (requires ADMIN) |
 
 ### Admin
 
@@ -207,8 +207,8 @@ Administrative dashboard for user management.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/admin/users` | List all users — supports `email`, `page`, `size` query params (requires ADMIN) |
-| `PATCH` | `/admin/users/:id/mock-test-access` | Toggle mock test access for a user (requires ADMIN) |
+| `GET` | `/api/v1/admin/users` | List all users — supports `email`, `page`, `size` query params (requires ADMIN) |
+| `PATCH` | `/api/v1/admin/users/:id/mock-test-access` | Toggle mock test access for a user (requires ADMIN) |
 
 ### Mock Tests
 
@@ -216,12 +216,12 @@ Practice tests for UAS (Universities of Applied Sciences) entrance exams.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/mock-tests/templates` | List available test templates |
-| `GET` | `/mock-tests/templates/:id` | Get a specific template |
-| `POST` | `/mock-tests` | Start a new test attempt (requires auth) |
-| `GET` | `/mock-tests/history` | Get user's test history (requires auth) |
-| `GET` | `/mock-tests/:id` | Get a specific attempt (requires auth) |
-| `POST` | `/mock-tests/:id/submit` | Submit answers for an attempt (requires auth) |
+| `GET` | `/api/v1/mock-tests/templates` | List available test templates |
+| `GET` | `/api/v1/mock-tests/templates/:id` | Get a specific template |
+| `POST` | `/api/v1/mock-tests` | Start a new test attempt (requires auth) |
+| `GET` | `/api/v1/mock-tests/history` | Get user's test history (requires auth) |
+| `GET` | `/api/v1/mock-tests/:id` | Get a specific attempt (requires auth) |
+| `POST` | `/api/v1/mock-tests/:id/submit` | Submit answers for an attempt (requires auth) |
 
 **Query parameters for `/mock-tests/templates`:**
 - `subject` — filter by subject: `math`, `language_en`, `reading`, `analytical`
@@ -235,11 +235,11 @@ Practice tests for UAS (Universities of Applied Sciences) entrance exams.
 
 ## Authentication
 
-JWT-based authentication using `@nestjs/passport` and `passport-jwt`. Routes marked _"requires auth"_ expect an `Authorization: Bearer <token>` header. Obtain a token via `POST /auth/login`. Admin routes additionally require the user to have the `ADMIN` role (checked by `RolesGuard`).
+JWT-based authentication using `@nestjs/passport` and `passport-jwt`. Routes marked _"requires auth"_ expect an `Authorization: Bearer <token>` header. Obtain a token via `POST /api/v1/auth/login`. Admin routes additionally require the user to have the `ADMIN` role (checked by `RolesGuard`).
 
 ## API Docs (Swagger)
 
-Interactive Swagger UI available at **`/api`** in development (`NODE_ENV !== 'production'`). Provides full endpoint documentation, request/response schemas, and in-browser testing. Disabled in production.
+Interactive Swagger UI available at **`/api/docs`** in development (`NODE_ENV !== 'production'`). Provides full endpoint documentation, request/response schemas, and in-browser testing. Disabled in production.
 
 ## Rate Limiting
 
