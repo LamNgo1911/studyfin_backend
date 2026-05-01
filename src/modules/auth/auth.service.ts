@@ -126,28 +126,25 @@ export class AuthService {
   async forgotPassword(email: string): Promise<{ message: string }> {
     const user = await this.usersService.findByEmail(email);
 
-    // Always return success to prevent email enumeration
-    if (!user) {
-      return {
-        message:
-          'If an account exists with this email, a password reset link has been sent',
-      };
-    }
-
+    // Generate a token even when no user exists — makes the timing profile
+    // indistinguishable from the success path to prevent email enumeration.
     const resetToken = this.generateToken();
-    const resetTokenExpiresAt = new Date();
-    resetTokenExpiresAt.setHours(
-      resetTokenExpiresAt.getHours() + this.RESET_TOKEN_EXPIRY_HOURS,
-    );
 
-    await this.usersService.setResetToken(
-      user.id,
-      resetToken,
-      resetTokenExpiresAt,
-    );
+    if (user) {
+      const resetTokenExpiresAt = new Date();
+      resetTokenExpiresAt.setHours(
+        resetTokenExpiresAt.getHours() + this.RESET_TOKEN_EXPIRY_HOURS,
+      );
 
-    // Log reset token (in production, this would be sent via email)
-    console.log(`[Auth] Password reset token for ${user.email}: ${resetToken}`);
+      await this.usersService.setResetToken(
+        user.id,
+        resetToken,
+        resetTokenExpiresAt,
+      );
+
+      // Log reset token (in production, this would be sent via email)
+      console.log(`[Auth] Password reset token for ${user.email}: ${resetToken}`);
+    }
 
     return {
       message:

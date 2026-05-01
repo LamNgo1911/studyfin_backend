@@ -8,19 +8,21 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  // Swagger
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('StudyFin API')
-    .setDescription('Finnish higher education API for international students')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api', app, document);
+  // Swagger — exposed in non-production environments only
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('StudyFin API')
+      .setDescription('Finnish higher education API for international students')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api', app, document);
+  }
 
   // CORS
   app.enableCors({
-    origin: true,
+    origin: configService.get('CORS_ORIGIN', '*'),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
