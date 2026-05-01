@@ -465,6 +465,13 @@ export class MockTestsService {
               include: {
                 options: {
                   orderBy: { orderIndex: 'asc' },
+                  select: {
+                    id: true,
+                    label: true,
+                    body: true,
+                    orderIndex: true,
+                    isCorrect: true,
+                  },
                 },
               },
             },
