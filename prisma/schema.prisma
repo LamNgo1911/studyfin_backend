@@ -117,6 +117,7 @@ model User {
   firstName       String?
   lastName        String?
   role            Role      @default(USER)
+  hasTestAccess   Boolean   @default(false)
   emailVerifiedAt DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
