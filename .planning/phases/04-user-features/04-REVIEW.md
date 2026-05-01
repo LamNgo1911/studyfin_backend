@@ -1,8 +1,8 @@
 ---
 phase: 04-user-features
-reviewed: 2026-05-01T09:52:18Z
+reviewed: 2026-05-01T11:26:00Z
 depth: standard
-files_reviewed: 17
+files_reviewed: 16
 files_reviewed_list:
   - prisma/schema.prisma
   - src/app.module.ts
@@ -16,282 +16,349 @@ files_reviewed_list:
   - src/modules/mock-tests/mock-tests.service.ts
   - src/modules/mock-tests/mock-tests.spec.ts
   - src/modules/users/dto/list-saved-programs-query.dto.ts
-  - src/modules/users/dto/save-program.dto.ts
   - src/modules/users/dto/update-profile.dto.ts
   - src/modules/users/users.controller.ts
   - src/modules/users/users.service.ts
   - src/modules/users/users.spec.ts
 findings:
-  critical: 5
-  warning: 5
-  info: 3
-  total: 13
+  critical: 1
+  warning: 4
+  info: 2
+  total: 7
 status: issues_found
 ---
 
-# Phase 04: Code Review Report
+# Phase 04: Code Review Report (Iteration 2)
 
-**Reviewed:** 2026-05-01T09:52:18Z
+**Reviewed:** 2026-05-01T11:26:00Z
 **Depth:** standard
-**Files Reviewed:** 17
+**Files Reviewed:** 16
 **Status:** issues_found
 
 ## Summary
 
-This phase delivers user self-service features (profile, saved programs), admin user-management endpoints, and a mock-test engine. The code is generally well-structured — select allowlists prevent credential leakage, guards are composed correctly, and the transaction usage in `submitAnswers` is sound. However, five blocker-level defects were found across security and correctness dimensions:
+This is the second review of phase 04 code. The first review found 13 issues (CR-01 through CR-05, WR-01 through WR-05, IN-01 through IN-03). Fixes were applied on branch `review-fix-04`, and a subset of those fixes were cherry-picked to the current branch `review-fix-temp`. Seven issues remain:
 
-- The mock-test `GET /templates` and `GET /templates/:id` endpoints are publicly unauthenticated, yet `isActive` filtering on the template detail endpoint is evaluated **after** the query returns, meaning the guard logic can be bypassed on an already-fetched (possibly inactive or future) template with a timing-dependent race (minor severity here), but more critically the `GET /mock-tests/history` route is reachable by any authenticated user without a test-access check.
-- `submitAnswers` allows duplicate answers for the same question to be submitted in a single payload — the per-row unique constraint in the DB (`@@unique([mockTestId, questionId])`) will cause a runtime `P2002` error that is not caught, crashing the request with a 500.
-- `RolesGuard` reads roles from `context.getHandler()` only, not the class-level metadata, so the class-level `@Roles(['ADMIN'])` on `AdminController` is silently ignored — both admin endpoints are effectively unprotected against non-admin authenticated users.
-- `updateProfile` accepts an empty body silently: both fields are optional, so a PATCH with `{}` succeeds and performs a `user.update` with an empty `data: {}` object — a no-op that returns HTTP 200, which is misleading but also confirms the guard bypass impact is wider since no field validation forces at least one field to change.
-- The `Auth` model stores `refreshToken` as a plain string — there is no indication of hashing in the schema, service, or surrounding code; storing a bearer-equivalent credential in plaintext is a security vulnerability.
+**1 critical:** The CR-03 fix (`hasTestAccess` guard on `submitAnswers` and `getHistory`) was applied to the service code, but the corresponding test file was not updated -- all 9 tests in `submitAnswers` and `getHistory` suites fail at runtime because `prisma.user.findUnique` returns `undefined` and the ForbiddenException fires before any test logic executes. One test ("wrong user") silently passes for the wrong reason.
+
+**4 warnings:** Two prior findings (WR-04 pagination, WR-05 explicit select for options) were never applied to this branch -- their fix commits exist only on `review-fix-04`. Two additional issues: TOCTOU race conditions in `removeSavedProgram`/`updateSavedProgramStatus` (unhandled P2025 = 500 error), and empty-string acceptance in `updateProfile` (name fields overwritable with `""`).
+
+**2 info items:** Missing test for WR-01 fix, and an assertion gap in the `removeSavedProgram` test.
+
+## Previously Fixed Issues (Not Re-reviewed in Detail)
+
+The following findings from the first review were confirmed as addressed in this codebase revision:
+
+- **CR-01** -- RolesGuard now uses `getAllAndOverride` to respect class-level `@Roles`
+- **CR-02** -- Duplicate questionId rejection added in `submitAnswers`
+- **CR-03** -- `hasTestAccess` checks added to `submitAnswers` and `getHistory`
+- **CR-04** -- Auth schema uses `refreshTokenHash` with SHA-256
+- **CR-05** -- JwtAuthGuard added to template endpoints
+- **WR-01** -- Empty body rejection in `updateProfile`
+- **WR-02** -- All-questions-answered validation in `submitAnswers`
+- **WR-03** -- DTO file renamed from `save-program.dto.ts` to `update-saved-program.dto.ts`
+
+WR-04 and WR-05 are **not** fixed on this branch (see findings below).
 
 ---
 
 ## Critical Issues
 
-### CR-01: RolesGuard reads only handler-level metadata — class-level `@Roles` is ignored, admin endpoints are unprotected
+### CR-06: All `submitAnswers` and `getHistory` tests broken by CR-03 fix -- missing `hasTestAccess` mock
 
-**File:** `src/common/guards/roles.guard.ts:17`
+**File:** `/home/liam/Downloads/github_repo/studyfin-backend/src/modules/mock-tests/mock-tests.spec.ts`
+**Lines:** 295-417 (submitAnswers suite), 420-455 (getHistory suite)
+**Issue:** The CR-03 fix added `hasTestAccess` checks at the start of both `submitAnswers` (lines 191-200) and `getHistory` (lines 387-396) in `mock-tests.service.ts`. However, the test spec file was only updated to mock `prisma.user.findUnique` for the `startTest` test suite. The `submitAnswers` and `getHistory` tests do not mock `prisma.user.findUnique`. Since the jest mock returns `undefined` by default, the check `if (!userAccess || !userAccess.hasTestAccess)` evaluates `!undefined` as `true` and throws `ForbiddenException` before any test-specific logic runs.
 
-**Issue:** `this.reflector.get(Roles, context.getHandler())` reads the `@Roles` decorator only from the individual handler method. `AdminController` decorates the **class** with `@Roles(['ADMIN'])` (line 22 of `admin.controller.ts`), not individual methods. Because none of the handler methods carry their own `@Roles` decorator, `requiredRoles` is always `undefined` for every admin route, causing the guard to short-circuit to `return true` at line 20. Any authenticated user — regardless of role — can call `GET /admin/users` and `PATCH /admin/users/:id/mock-test-access`.
+Consequences for each test:
 
-**Fix:** Replace `reflector.get` with `reflector.getAllAndOverride`, which checks handler first then falls back to the class:
+| Test in `submitAnswers` | Expected outcome | Actual outcome |
+|---|---|---|
+| `grades answers correctly and returns results` | succeed, score=1 | **FAIL -- ForbiddenException** |
+| `throws NotFoundException for non-existent test` | NotFoundException | **FAIL -- ForbiddenException** |
+| `throws ForbiddenException for wrong user` | ForbiddenException | **PASSES FOR WRONG REASON** (thrown by hasTestAccess, not userId check) |
+| `throws BadRequestException for already completed test` | BadRequestException | **FAIL -- ForbiddenException** |
+| `throws BadRequestException for invalid question` | BadRequestException | **FAIL -- ForbiddenException** |
+| `throws BadRequestException for invalid option` | BadRequestException | **FAIL -- ForbiddenException** |
+| `handles unanswered questions (null selectedOptionId)` | succeed, score=0 | **FAIL -- ForbiddenException** |
 
-```typescript
-const requiredRoles = this.reflector.getAllAndOverride<string[]>(Roles, [
-  context.getHandler(),
-  context.getClass(),
-]);
-```
+| Test in `getHistory` | Expected outcome | Actual outcome |
+|---|---|---|
+| `returns paginated list of user test attempts` | succeed, percentage=80 | **FAIL -- ForbiddenException** |
+| `filters by status when provided` | succeed | **FAIL -- ForbiddenException** |
 
----
+The "wrong user" false positive is the most dangerous -- it appears green in CI but verifies nothing about the authorization check it claims to test.
 
-### CR-02: `submitAnswers` does not deduplicate answers — duplicate `questionId` entries cause an unhandled DB unique-constraint crash (HTTP 500)
-
-**File:** `src/modules/mock-tests/mock-tests.service.ts:233-265`
-
-**Issue:** The loop at line 233 iterates every entry in `dto.answers` and pushes a row into `answersToCreate` for each one, including duplicates for the same `questionId`. The schema defines `@@unique([mockTestId, questionId])` on `MockTestAnswer`. When `tx.mockTestAnswer.create` is called for the second entry with the same `questionId`, Prisma throws a P2002 error inside the `$transaction` callback. This error propagates uncaught, producing an HTTP 500 for the client and leaving the mock test in a corrupted intermediate state (transaction rolls back, but the test status remains `in_progress`).
-
-**Fix:** Deduplicate `dto.answers` by `questionId` before the loop, or detect and reject duplicates early:
-
-```typescript
-const seenQuestions = new Set<string>();
-for (const answer of dto.answers) {
-  if (seenQuestions.has(answer.questionId)) {
-    throw new BadRequestException(
-      `Duplicate answer submitted for question ${answer.questionId}`,
-    );
-  }
-  seenQuestions.add(answer.questionId);
-  // ... rest of grading logic
-}
-```
-
----
-
-### CR-03: `GET /mock-tests/history` is accessible to any authenticated user regardless of `hasTestAccess`
-
-**File:** `src/modules/mock-tests/mock-tests.controller.ts:49-57`
-
-**Issue:** `startTest` (line 40) and `getAttempt` (line 59) are guarded by `JwtAuthGuard` and `startTest` additionally checks `hasTestAccess` inside the service (line 112 of `mock-tests.service.ts`). However, `getHistory` (line 49) and implicitly `submitAnswers` (line 65) have no access guard beyond authentication. A user without `hasTestAccess` who somehow has an existing mock test record (e.g., from before the flag was revoked) can retrieve their history or submit answers. More importantly, `getHistory` can be called by any authenticated user even with no tests at all — there is inconsistency in who is allowed to interact with the mock-test surface. Per `startTest`'s guard, access is gated. That gate should apply to all mock-test user operations.
-
-**Fix:** Add `hasTestAccess` check (matching the pattern in `startTest`) at the start of both `getHistory` and `submitAnswers` in `MockTestsService`, or add a reusable guard/decorator for test access.
+**Fix:** Add `prisma.user.findUnique.mockResolvedValue({ hasTestAccess: true })` at the top of every `submitAnswers` and `getHistory` test that expects the logic to proceed past the access check. Also add explicit tests for the `hasTestAccess` guard in these suites:
 
 ```typescript
-// At the top of getHistory:
-const userAccess = await this.prisma.user.findUnique({
-  where: { id: userId },
-  select: { hasTestAccess: true },
+// In submitAnswers describe block:
+it('throws ForbiddenException when user does not have test access', async () => {
+  prisma.user.findUnique.mockResolvedValue({ hasTestAccess: false });
+  await expect(
+    service.submitAnswers('user-1', 'test-1', { answers: [] }),
+  ).rejects.toThrow(ForbiddenException);
 });
-if (!userAccess || !userAccess.hasTestAccess) {
-  throw new ForbiddenException('Mock test access is not enabled for your account');
-}
-```
 
----
-
-### CR-04: `Auth.refreshToken` stored as plaintext — compromised DB exposes all refresh tokens as bearer-equivalent credentials
-
-**File:** `prisma/schema.prisma:143`
-
-**Issue:** The `Auth` model stores `refreshToken String` with no indication of hashing. A refresh token is functionally equivalent to a long-lived session credential: anyone with read access to the database (e.g., via SQL injection elsewhere, backup exposure, or insider threat) can immediately impersonate every logged-in user by using their refresh token. OWASP recommends storing token verifiers using a one-way hash (SHA-256 of the random token is sufficient for non-password tokens).
-
-**Fix:** Store only `SHA-256(refreshToken)` in the database. On verification, hash the incoming token and compare. The schema field name can be changed to `refreshTokenHash String` to make the intent clear. The corresponding auth service logic must hash before write and hash before compare.
-
-```prisma
-model Auth {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refreshTokenHash  String   // SHA-256 of the issued token; never store plaintext
-  createdAt         DateTime @default(now())
-  expiresAt         DateTime
-}
-```
-
----
-
-### CR-05: `GET /mock-tests/templates` and `GET /mock-tests/templates/:id` are publicly unauthenticated — test content exposed without access control
-
-**File:** `src/modules/mock-tests/mock-tests.controller.ts:26-37`
-
-**Issue:** Both template listing and template detail endpoints have no `@UseGuards(JwtAuthGuard)`. This means the full question bank — question bodies, answer options, and all metadata — is readable by any unauthenticated caller. The `isCorrect` field is intentionally omitted from options in `getTemplate` (line 62-69 of `mock-tests.service.ts`), but unauthenticated access to question bodies enables harvesting and sharing of test content. Given that `startTest` requires authentication and `hasTestAccess`, the template endpoints should require at minimum authentication; access to template details should arguably also require `hasTestAccess`.
-
-**Fix:** Add `@UseGuards(JwtAuthGuard)` to both template routes:
-
-```typescript
-@Get('templates')
-@UseGuards(JwtAuthGuard)
-listTemplates(...) { ... }
-
-@Get('templates/:id')
-@UseGuards(JwtAuthGuard)
-getTemplate(...) { ... }
+// In getHistory describe block:
+it('throws ForbiddenException when user does not have test access', async () => {
+  prisma.user.findUnique.mockResolvedValue({ hasTestAccess: false });
+  await expect(
+    service.getHistory('user-1', { size: 20, page: 0 }),
+  ).rejects.toThrow(ForbiddenException);
+});
 ```
 
 ---
 
 ## Warnings
 
-### WR-01: `updateProfile` accepts an empty body and silently performs a no-op database update
+### WR-06: WR-04 fix not applied -- `listSavedPrograms` lacks pagination
 
-**File:** `src/modules/users/users.service.ts:135-153`
+**File:** `/home/liam/Downloads/github_repo/studyfin-backend/src/modules/users/users.service.ts`
+**Lines:** 228-247
+**Issue:** The `listSavedPrograms` method calls `findMany` without `skip`/`take`. The `ListSavedProgramsQueryDto` has no `page` or `size` fields. The fix commit `653628b` (`fix(04): WR-04 add pagination to listSavedPrograms endpoint`) exists only on branch `review-fix-04` and was never cherry-picked to `review-fix-temp`. The REVIEW-FIX.md erroneously reports this as fixed.
 
-**Issue:** Both `firstName` and `lastName` are optional in `UpdateProfileDto`. When neither is provided, `data` is `{}` and Prisma executes `UPDATE "User" SET "updatedAt" = NOW() WHERE id = $1` — touching the row but changing nothing meaningful. The caller receives HTTP 200 with unchanged data, providing no feedback that their request was effectively empty. In addition to being misleading, an empty-body PATCH that always succeeds means the endpoint cannot distinguish "intentional update" from "malformed client".
+Users with many saved programs receive the entire result set in a single response. Other list endpoints in the same codebase (`listUsers`, `listTemplates`, `getHistory`) all paginate.
 
-**Fix:** Add a validation check that at least one field is present before calling the database:
+**Fix:** Cherry-pick commit `653628b` from `review-fix-04`, or apply the following changes manually:
 
+1. Add pagination fields to `ListSavedProgramsQueryDto`:
 ```typescript
-if (dto.firstName === undefined && dto.lastName === undefined) {
-  throw new BadRequestException('At least one field (firstName, lastName) must be provided');
+import { Type } from 'class-transformer';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+
+const ALLOWED_STATUSES = [
+  'interested',
+  'applying',
+  'applied',
+  'accepted',
+  'rejected',
+] as const;
+
+export class ListSavedProgramsQueryDto {
+  @IsOptional()
+  @IsString()
+  @IsIn(ALLOWED_STATUSES)
+  status?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  page?: number = 0;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  size?: number = 20;
 }
 ```
 
----
-
-### WR-02: `submitAnswers` does not validate that all template questions have been answered — partial submissions accepted silently
-
-**File:** `src/modules/mock-tests/mock-tests.service.ts:233-265`
-
-**Issue:** The grading loop only processes the questions present in `dto.answers`. A client can submit an empty `answers: []` array and receive a score of 0 with a `completed` status — no error is raised. Unanswered questions are simply absent from the stored `MockTestAnswer` rows. This is inconsistent: `getAttempt` on the completed test will then show some questions with `userAnswer: null` even though the test was submitted after (apparently) answering all questions. The DB schema has `@@unique([mockTestId, questionId])` but does not enforce completeness.
-
-**Fix:** After building `answersToCreate`, verify that every question in `questionMap` has been answered:
-
+2. Update `listSavedPrograms` in `users.service.ts`:
 ```typescript
-for (const [qId] of questionMap) {
-  if (!answersToCreate.find((a) => a.questionId === qId)) {
-    throw new BadRequestException(
-      `Answer missing for question ${qId}`,
-    );
-  }
+async listSavedPrograms(userId: string, query: ListSavedProgramsQueryDto) {
+  const { status, page = 0, size = 20 } = query;
+
+  const where = {
+    userId,
+    ...(status && { status }),
+  };
+
+  const [total, programs] = await Promise.all([
+    this.prisma.userProgram.count({ where }),
+    this.prisma.userProgram.findMany({
+      where,
+      skip: page * size,
+      take: size,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        programId: true,
+        status: true,
+        createdAt: true,
+        program: {
+          select: { name: true, oid: true, type: true, fieldOfStudy: true },
+        },
+      },
+    }),
+  ]);
+
+  return { total, page, size, programs };
 }
 ```
 
-Alternatively, accept partial submission as a design choice but document it explicitly and ensure `getAttempt` handles `userAnswer: null` gracefully (it already does, so this is a softer requirement).
+### WR-07: WR-05 fix not applied -- `getAttempt` fetches `isCorrect` in DB query for in-progress tests
 
----
+**File:** `/home/liam/Downloads/github_repo/studyfin-backend/src/modules/mock-tests/mock-tests.service.ts`
+**Lines:** 462-470
+**Issue:** The `getAttempt` method uses `include: { options: { orderBy: { orderIndex: 'asc' } } }` inside the Prisma query, which fetches ALL option fields including `isCorrect` unconditionally. For in-progress tests (line 496), `isCorrect` is stripped in the response mapping, but the data exists in server memory during the request lifecycle. An unhandled exception dump, verbose log, or future code change could accidentally expose it.
 
-### WR-03: `save-program.dto.ts` file name does not match the exported class name
+The fix commit `c4d920c` (`fix(04): WR-05 use explicit select for options in getAttempt`) exists only on `review-fix-04` and was never applied to `review-fix-temp`.
 
-**File:** `src/modules/users/dto/save-program.dto.ts:11`
-
-**Issue:** The file is named `save-program.dto.ts` but exports `UpdateSavedProgramDto`. The controller imports it as `UpdateSavedProgramDto` from `./dto/save-program.dto` (line 18 of `users.controller.ts`). While this is functional TypeScript, the mismatched file name creates confusion: the save (create) operation uses `POST /me/programs/:programId` with no body at all, while this DTO is only used for the PATCH. The file should be named `update-saved-program.dto.ts` to match the class and its actual usage.
-
-**Fix:** Rename the file to `update-saved-program.dto.ts` and update the import paths in `users.controller.ts` and `users.service.ts`.
-
----
-
-### WR-04: `listSavedPrograms` has no pagination — unbounded result set for users with many saved programs
-
-**File:** `src/modules/users/users.service.ts:221-240`
-
-**Issue:** `listSavedPrograms` calls `findMany` with no `take` or `skip`, returning all saved programs for a user in a single query. While today's user base is small, this is a correctness risk: the associated `ListSavedProgramsQueryDto` has no page/size fields, making it impossible to add pagination later without a breaking API change. Other list endpoints in the same codebase (`listUsers`, `listTemplates`, `getHistory`) all paginate.
-
-**Fix:** Add `page` and `size` pagination fields to `ListSavedProgramsQueryDto` and apply them in `listSavedPrograms`, consistent with other list endpoints.
-
----
-
-### WR-05: `getAttempt` fetches full `options` (including `isCorrect`) for in-progress tests inside the DB query, then strips it in application code — data exists in memory during the request
-
-**File:** `src/modules/mock-tests/mock-tests.service.ts:422-428`
-
-**Issue:** For `getAttempt`, the Prisma include at line 422-428 fetches `options` with no field selection, meaning `isCorrect` is loaded for all options regardless of test status. For in-progress tests (line 453), the response mapping manually omits `isCorrect` from the returned shape. While the HTTP response is correct, the data is present in the application's heap during the request lifecycle. If an unhandled exception or future code change accidentally surfaces the full object, `isCorrect` leaks. The safer pattern (already used in `getTemplate`) is to exclude `isCorrect` at the Prisma query level using a `select`.
-
-**Fix:** Mirror the `getTemplate` select pattern inside the `getAttempt` include for the in-progress code path:
+**Fix:** Cherry-pick commit `c4d920c` from `review-fix-04`, or replace the unrestricted `include` with an explicit `select` that documents the data contract:
 
 ```typescript
-options: {
-  orderBy: { orderIndex: 'asc' },
-  select: {
-    id: true,
-    label: true,
-    body: true,
-    orderIndex: true,
-    isCorrect: true, // included; filtered out in mapping for in-progress
+include: {
+  options: {
+    orderBy: { orderIndex: 'asc' },
+    select: {
+      id: true,
+      label: true,
+      body: true,
+      orderIndex: true,
+      isCorrect: true, // explicitly listed so the data contract is clear
+    },
   },
 },
 ```
 
-Alternatively, split into two separate Prisma calls based on status, using a select that excludes `isCorrect` for in-progress.
+### WR-08: TOCTOU race condition in `removeSavedProgram` and `updateSavedProgramStatus`
+
+**File:** `/home/liam/Downloads/github_repo/studyfin-backend/src/modules/users/users.service.ts`
+**Lines:** 197-215 (updateSavedProgramStatus), 218-226 (removeSavedProgram)
+**Issue:** Both methods follow a read-then-write pattern:
+
+```typescript
+// Check (line 197-200)
+const existing = await this.prisma.userProgram.findUnique({
+  where: { userId_programId: { userId, programId } },
+});
+if (!existing) throw new NotFoundException('Saved program not found');
+
+// Act (line 202-214) -- TOCTOU window between the two calls
+return this.prisma.userProgram.update({ ... });
+```
+
+If the `UserProgram` record is deleted by a concurrent request between the `findUnique` and the `update`/`delete`, Prisma throws `P2025` (RecordNotFound). Neither method has a try/catch for P2025, so the error propagates as an unhandled HTTP 500 response. By contrast, `saveProgram` correctly handles its analogous race via P2002 catch (lines 183-188).
+
+The `findUnique` check is also redundant -- the subsequent `update`/`delete` with the same compound key would fail with P2025 anyway, so eliminating the read saves a query while also removing the race window.
+
+**Fix:** Replace the `findUnique` + `update`/`delete` pattern with a single `update`/`delete` wrapped in a try/catch for P2025:
+
+For `removeSavedProgram`:
+```typescript
+async removeSavedProgram(userId: string, programId: string) {
+  try {
+    await this.prisma.userProgram.delete({
+      where: { userId_programId: { userId, programId } },
+    });
+  } catch (err: any) {
+    if (err?.code === 'P2025') {
+      throw new NotFoundException('Saved program not found');
+    }
+    throw err;
+  }
+}
+```
+
+For `updateSavedProgramStatus`:
+```typescript
+async updateSavedProgramStatus(
+  userId: string,
+  programId: string,
+  dto: UpdateSavedProgramDto,
+) {
+  try {
+    return await this.prisma.userProgram.update({
+      where: { userId_programId: { userId, programId } },
+      data: { status: dto.status },
+      select: {
+        id: true,
+        programId: true,
+        status: true,
+        createdAt: true,
+        program: {
+          select: { name: true, oid: true, type: true, fieldOfStudy: true },
+        },
+      },
+    });
+  } catch (err: any) {
+    if (err?.code === 'P2025') {
+      throw new NotFoundException('Saved program not found');
+    }
+    throw err;
+  }
+}
+```
+
+### WR-09: `updateProfile` accepts empty strings for `firstName`/`lastName`
+
+**File:** `/home/liam/Downloads/github_repo/studyfin-backend/src/modules/users/dto/update-profile.dto.ts`
+**Lines:** 1-13
+**Issue:** The `UpdateProfileDto` uses `@IsOptional()` and `@IsString()` but does not use `@IsNotEmpty()`. An empty string (`""`) passes `@IsString()` validation. The service then spreads it into the update data because `dto.firstName !== undefined` evaluates to `true` for `""`:
+
+```typescript
+// DTO allows: { firstName: "" }
+// Service logic:
+...(dto.firstName !== undefined && { firstName: "" })
+// Result: User name is overwritten with empty string
+```
+
+A user with a legitimate name can accidentally or maliciously have their display name set to an empty string.
+
+**Fix:** Add `@IsNotEmpty()` to both fields in the DTO:
+
+```typescript
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+
+export class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  lastName?: string;
+}
+```
 
 ---
 
 ## Info
 
-### IN-01: `ALLOWED_STATUSES` constant is duplicated between two DTO files
+### IN-04: Missing test for WR-01 fix (empty body rejection in `updateProfile`)
 
-**File:** `src/modules/users/dto/save-program.dto.ts:3-9` and `src/modules/users/dto/list-saved-programs-query.dto.ts:3-9`
+**File:** `/home/liam/Downloads/github_repo/studyfin-backend/src/modules/users/users.spec.ts`
+**Lines:** 78-86
+**Issue:** The `updateProfile` test suite has only one happy-path test. The WR-01 fix (empty body rejection throwing `BadRequestException`) has no corresponding test to verify it works. If the rejection logic is accidentally removed or broken in a future refactor, no test will catch the regression.
 
-**Issue:** The same `ALLOWED_STATUSES` array is defined identically in two files. If a new status is added, both files must be updated in sync.
-
-**Fix:** Extract the constant to a shared location such as `src/modules/users/dto/program-status.ts` and import it from both DTOs.
-
----
-
-### IN-02: `AdminModule` does not declare `PrismaModule` as an import — works only because `PrismaModule` is global
-
-**File:** `src/modules/admin/admin.module.ts:5-9`
-
-**Issue:** `AdminService` injects `PrismaService`, but `AdminModule` lists no `imports`. This works at runtime because `PrismaModule` is registered globally (inferred from the pattern in this codebase). If `PrismaModule` were ever de-globalized, this module would fail to start silently until runtime. The same implicit dependency pattern appears in `UsersModule` (not listed in reviewed files but inferred via `UsersService`).
-
-**Fix:** Explicitly import `PrismaModule` into `AdminModule`:
+**Fix:** Add a test for the empty body rejection:
 
 ```typescript
-@Module({
-  imports: [PrismaModule],
-  controllers: [AdminController],
-  providers: [AdminService],
-})
-export class AdminModule {}
+it('throws BadRequestException when body is empty', async () => {
+  await expect(
+    service.updateProfile('user-1', {}),
+  ).rejects.toThrow(BadRequestException);
+});
 ```
 
----
+### IN-05: `removeSavedProgram` test does not verify `delete` was skipped on 404
 
-### IN-03: `users.spec.ts` uses a module-level `mockPrisma` object shared across tests with `jest.clearAllMocks()` — mock state is not fully reset between tests
+**File:** `/home/liam/Downloads/github_repo/studyfin-backend/src/modules/users/users.spec.ts`
+**Lines:** 127-139
+**Issue:** The `removeSavedProgram` 404 test (line 135-138) verifies that `NotFoundException` is thrown but does not assert that `userProgram.delete` was never called. In the current implementation this is guaranteed by the early return, but a future refactor that reorders the logic could accidentally call `delete` before the existence check. An explicit assertion would catch that regression.
 
-**File:** `src/modules/users/users.spec.ts:26-41`
-
-**Issue:** `mockPrisma` is declared at module scope as a plain object of `jest.fn()` references. `jest.clearAllMocks()` in `beforeEach` clears call history and return values, but the mock functions themselves are the same references throughout the test suite run. This is subtle: if any test mutates the mock implementation (e.g., `mockImplementation` instead of `mockResolvedValue`), it could bleed state into subsequent tests. By contrast, `mock-tests.spec.ts` and `admin.service.spec.ts` both recreate mocks in `beforeEach`, which is the safer pattern.
-
-**Fix:** Move `mockPrisma` construction inside `beforeEach`:
+**Fix:** Add an assertion that `delete` was not called:
 
 ```typescript
-beforeEach(async () => {
-  const prisma = {
-    user: { findUnique: jest.fn(), update: jest.fn() },
-    program: { findUnique: jest.fn() },
-    userProgram: {
-      create: jest.fn(), findUnique: jest.fn(),
-      update: jest.fn(), delete: jest.fn(), findMany: jest.fn(),
-    },
-  };
-  // ... use prisma in TestingModule
+it('throws NotFoundException when saved program not found', async () => {
+  mockPrisma.userProgram.findUnique.mockResolvedValue(null);
+  await expect(
+    service.removeSavedProgram('user-1', 'bad-prog'),
+  ).rejects.toThrow(NotFoundException);
+  expect(mockPrisma.userProgram.delete).not.toHaveBeenCalled();
 });
 ```
 
 ---
 
-_Reviewed: 2026-05-01T09:52:18Z_
+_Reviewed: 2026-05-01T11:26:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
