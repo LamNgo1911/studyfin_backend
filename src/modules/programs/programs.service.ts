@@ -128,6 +128,8 @@ export class ProgramsService {
       degreeTitles: row.degreeTitles ?? [],
       teachingLanguages: row.teachingLanguages ?? [],
       implementations: row.implementations ?? null,
+      hakukohteet: row.hakukohteet ?? null,
+      duration: row.duration ?? null,
       hasGuidance: (row._count?.guidanceSections ?? 0) > 0,
       universities: (row.universities ?? [])
         .filter((pu: any) => this.hasEnglish(pu.university))

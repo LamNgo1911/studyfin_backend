@@ -15,7 +15,7 @@ const mockProgramRow = {
   creditsUnit: 'ECTS credits',
   teachingLanguages: ['en'],
   universities: [
-    { university: { oid: 'uni-oid-1', name: 'Aalto University', nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University' } } },
+    { university: { oid: 'uni-oid-1', name: 'Aalto University', nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University' }, descriptionMultilingual: { fi: 'Kuvaus', en: 'Description' } } },
   ],
 };
 
@@ -27,6 +27,18 @@ const mockProgramDetailRow = {
   nqfLevel: 'nqf_6',
   degreeTitles: ['Bachelor of Science'],
   implementations: [{ oid: 'impl-oid', name: 'CS implementation' }],
+  hakukohteet: [
+    {
+      oid: 'hakukohde-oid-1',
+      name: 'Application Group 1',
+      applicationPeriod: { start: '2025-01-01T00:00:00Z', end: '2025-03-15T23:59:59Z' },
+      requiredEducation: 'General upper secondary school',
+      admissionCriteriaOid: 'valintaperuste-oid-1',
+      applicationFormUrl: 'https://opintopolku.fi/app/hakulomake/hakukohde-oid-1',
+      implementationOids: ['impl-oid'],
+    },
+  ],
+  duration: '3 years',
 };
 
 describe('ProgramsService', () => {
@@ -63,7 +75,7 @@ describe('ProgramsService', () => {
 
   describe('findAll()', () => {
     it('returns paginated hits from DB with providers', async () => {
-      prisma.$transaction.mockResolvedValue([1, [mockProgramRow]]);
+      prisma.program.findMany.mockResolvedValue([mockProgramRow]);
 
       const result = await service.findAll();
 
@@ -76,25 +88,25 @@ describe('ProgramsService', () => {
       expect(result.hits[0].providers[0].name).toBe('Aalto University');
     });
 
-    it('applies page and size pagination to Prisma query', async () => {
-      // $transaction receives [countPromise, findManyPromise] — intercept and
-      // delegate to the individual mocks so spy calls get recorded.
-      prisma.$transaction.mockImplementation(async (ops) => {
-        const results = await Promise.all(ops);
-        return results;
-      });
-      prisma.program.count.mockResolvedValue(0);
-      prisma.program.findMany.mockResolvedValue([]);
+    it('applies in-memory pagination after English university filtering', async () => {
+      // Mock enough rows to test slicing
+      const rows = Array.from({ length: 15 }, (_, i) => ({
+        ...mockProgramRow,
+        oid: `prog-${i}`,
+      }));
+      prisma.program.findMany.mockResolvedValue(rows);
 
-      await service.findAll({ page: '2', size: '10' });
+      const result = await service.findAll({ page: '1', size: '10' });
 
-      const findManyArgs = prisma.program.findMany.mock.calls[0][0];
-      expect(findManyArgs.skip).toBe(20); // page 2 * size 10
-      expect(findManyArgs.take).toBe(10);
+      expect(result.page).toBe(1);
+      expect(result.size).toBe(10);
+      expect(result.total).toBe(15);
+      expect(result.hits).toHaveLength(5); // 15 rows, page 1 starts at index 10
+      expect(result.hits[0].oid).toBe('prog-10');
     });
 
     it('returns empty hits when DB is empty', async () => {
-      prisma.$transaction.mockResolvedValue([0, []]);
+      prisma.program.findMany.mockResolvedValue([]);
 
       const result = await service.findAll();
 
@@ -118,6 +130,8 @@ describe('ProgramsService', () => {
       expect(result.implementations).toEqual([
         { oid: 'impl-oid', name: 'CS implementation' },
       ]);
+      expect(result.hakukohteet).toEqual(mockProgramDetailRow.hakukohteet);
+      expect(result.duration).toBe('3 years');
       expect(result.universities[0].oid).toBe('uni-oid-1');
       expect(result.universities[0].name).toBe('Aalto University');
     });
@@ -131,6 +145,20 @@ describe('ProgramsService', () => {
       await expect(service.findOne('unknown-oid')).rejects.toThrow(
         'Program not found: unknown-oid',
       );
+    });
+
+    it('returns null hakukohteet and duration when not present in DB', async () => {
+      const rowWithoutHakukohteet = {
+        ...mockProgramDetailRow,
+        hakukohteet: undefined,
+        duration: undefined,
+      };
+      prisma.program.findUnique.mockResolvedValue(rowWithoutHakukohteet);
+
+      const result = await service.findOne('prog-oid-1');
+
+      expect(result.hakukohteet).toBeNull();
+      expect(result.duration).toBeNull();
     });
   });
 });
