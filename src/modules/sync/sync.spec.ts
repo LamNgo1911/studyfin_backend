@@ -142,4 +142,89 @@ describe('SyncService', () => {
       expect(arrayTransactionCall).toBeDefined();
     });
   });
+
+  describe('resolveHakukohteet()', () => {
+    const resolveLang = (obj: any): string => {
+      if (!obj || typeof obj !== 'object') return obj ?? '';
+      return obj.en ?? obj.fi ?? '';
+    };
+
+    it('returns Prisma.JsonNull for null/undefined input', () => {
+      const result1 = (service as any).resolveHakukohteet(null, resolveLang);
+      const result2 = (service as any).resolveHakukohteet(undefined, resolveLang);
+      expect(JSON.stringify(result1)).toBe(JSON.stringify(Prisma.JsonNull));
+      expect(JSON.stringify(result2)).toBe(JSON.stringify(Prisma.JsonNull));
+    });
+
+    it('returns Prisma.JsonNull for empty array', () => {
+      const result = (service as any).resolveHakukohteet([], resolveLang);
+      expect(JSON.stringify(result)).toBe(JSON.stringify(Prisma.JsonNull));
+    });
+
+    it('filters out hakukohteet without English names', () => {
+      const hakukohteet = [
+        { nimi: { fi: 'Suomenkielinen hakukohde' } },
+        { nimi: { fi: 'Toinen suomenkielinen' } },
+      ];
+      const result = (service as any).resolveHakukohteet(hakukohteet, resolveLang);
+      expect(JSON.stringify(result)).toBe(JSON.stringify(Prisma.JsonNull));
+    });
+
+    it('resolves hakukohteet with English names correctly', () => {
+      const hakukohteet = [
+        {
+          oid: 'hakukohde-oid-1',
+          nimi: { en: 'Application Group 1', fi: 'Hakuryhma 1' },
+          hakuaika: {
+            alkaa: '2025-01-01T00:00:00Z',
+            paattyy: '2025-03-15T23:59:59Z',
+          },
+          pohjakoulutusvaatimukset: [
+            { nimi: { en: 'General upper secondary school', fi: 'Ylioppilastutkinto' } },
+          ],
+          valintapere: { oid: 'valintaperuste-oid-1' },
+          linkit: [
+            { tyyppi: 'hakulomake', href: 'https://opintopolku.fi/app/hakulomake/hakukohde-oid-1' },
+          ],
+          kaytetytToteutusOid: ['impl-oid'],
+        },
+      ];
+      const result = (service as any).resolveHakukohteet(hakukohteet, resolveLang);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        oid: 'hakukohde-oid-1',
+        name: 'Application Group 1',
+        applicationPeriod: {
+          start: '2025-01-01T00:00:00Z',
+          end: '2025-03-15T23:59:59Z',
+        },
+        requiredEducation: 'General upper secondary school',
+        admissionCriteriaOid: 'valintaperuste-oid-1',
+        applicationFormUrl: 'https://opintopolku.fi/app/hakulomake/hakukohde-oid-1',
+        implementationOids: ['impl-oid'],
+      });
+    });
+
+    it('handles hakukohde with missing optional fields gracefully', () => {
+      const hakukohteet = [
+        {
+          oid: 'hakukohde-oid-2',
+          nimi: { en: 'Minimal Application Group' },
+          // No hakuaika, no pohjakoulutusvaatimukset, no valintapere, no linkit
+        },
+      ];
+      const result = (service as any).resolveHakukohteet(hakukohteet, resolveLang);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result[0]).toEqual({
+        oid: 'hakukohde-oid-2',
+        name: 'Minimal Application Group',
+        applicationPeriod: { start: null, end: null },
+        requiredEducation: null,
+        admissionCriteriaOid: null,
+        applicationFormUrl: null,
+        implementationOids: [],
+      });
+    });
+  });
 });

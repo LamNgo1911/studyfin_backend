@@ -268,6 +268,9 @@ export class SyncService {
 
     const teachingLanguages: string[] = detail.kielivalinta ?? [];
 
+    const duration: string | null = detail.kesto ?? null;
+    const resolvedHakukohteet = this.resolveHakukohteet(detail.hakukohteet, resolveLang);
+
     const eqfLevel: string | null = (detail.eqf ?? [])[0]?.koodiUri ?? null;
     const nqfLevel: string | null = (detail.nqf ?? [])[0]?.koodiUri ?? null;
 
@@ -295,6 +298,8 @@ export class SyncService {
           detail.toteutukset,
           resolveLang,
         ),
+        hakukohteet: resolvedHakukohteet,
+        duration,
         syncedAt,
       },
       update: {
@@ -316,6 +321,8 @@ export class SyncService {
           detail.toteutukset,
           resolveLang,
         ),
+        hakukohteet: this.resolveHakukohteet(detail.hakukohteet, resolveLang),
+        duration,
         syncedAt,
       },
     });
@@ -380,6 +387,30 @@ export class SyncService {
         name: resolveLang(p.nimi),
         municipality: resolveLang(p.paikkakunta?.nimi),
       })),
+    }));
+  }
+
+  private resolveHakukohteet(
+    hakukohteet: any[] | null | undefined,
+    resolveLang: (obj: any) => string,
+  ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+    if (!Array.isArray(hakukohteet) || hakukohteet.length === 0)
+      return Prisma.JsonNull;
+    const englishOnly = hakukohteet.filter((h: any) => h.nimi?.en);
+    if (englishOnly.length === 0) return Prisma.JsonNull;
+    return englishOnly.map((h: any) => ({
+      oid: h.oid,
+      name: resolveLang(h.nimi),
+      applicationPeriod: {
+        start: h.hakuaika?.alkaa ?? null,
+        end: h.hakuaika?.paattyy ?? null,
+      },
+      requiredEducation:
+        resolveLang(h.pohjakoulutusvaatimukset?.[0]?.nimi) || null,
+      admissionCriteriaOid: h.valintapere?.oid ?? null,
+      applicationFormUrl:
+        h.linkit?.find((l: any) => l.tyyppi === 'hakulomake')?.href ?? null,
+      implementationOids: h.kaytetytToteutusOid ?? [],
     }));
   }
 
