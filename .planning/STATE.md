@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: context exhaustion at 77% (2026-05-01)
-last_updated: "2026-05-01T16:52:51.052Z"
-last_activity: 2026-05-01
+stopped_at: context exhaustion at 75% (2026-05-01)
+last_updated: "2026-05-01T21:02:34.299Z"
+last_activity: 2026-05-02 - Completed quick task 260502-lz4: Add hakukohteet and duration to program details
 progress:
   total_phases: 5
   completed_phases: 5
@@ -98,6 +98,12 @@ None yet.
 - Phase 5: Prisma `fullTextSearchPostgres` is still a preview feature — validate relevance scoring with real synced data before relying on it
 - Known: Only one refresh token per user (single-device session); acceptable for v1 but must be addressed before broad marketing
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260502-lz4 | Add hakukohteet and duration to program details | 2026-05-02 | a70fc22 | [260502-lz4-i-did-not-see-requirements-or-admissions](./quick/260502-lz4-i-did-not-see-requirements-or-admissions/) |
+
 ## Deferred Items
 
 | Category | Item | Status | Deferred At |
@@ -110,7 +116,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-01T16:52:51.044Z
-Stopped at: context exhaustion at 77% (2026-05-01)
+Last session: 2026-05-01T21:02:34.284Z
+Stopped at: context exhaustion at 75% (2026-05-01)
 
 **Next step:** `/gsd-next` to plan Phase 4, or `/gsd-code-review-fix 03` to address code review findings first.
