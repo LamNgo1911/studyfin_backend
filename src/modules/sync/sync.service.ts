@@ -396,9 +396,7 @@ export class SyncService {
   ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
     if (!Array.isArray(hakukohteet) || hakukohteet.length === 0)
       return Prisma.JsonNull;
-    const englishOnly = hakukohteet.filter((h: any) => h.nimi?.en);
-    if (englishOnly.length === 0) return Prisma.JsonNull;
-    return englishOnly.map((h: any) => ({
+    return hakukohteet.map((h: any) => ({
       oid: h.oid,
       name: resolveLang(h.nimi),
       applicationPeriod: {

@@ -161,13 +161,16 @@ describe('SyncService', () => {
       expect(JSON.stringify(result)).toBe(JSON.stringify(Prisma.JsonNull));
     });
 
-    it('filters out hakukohteet without English names', () => {
+    it('falls back to Finnish name when English name is missing', () => {
       const hakukohteet = [
-        { nimi: { fi: 'Suomenkielinen hakukohde' } },
-        { nimi: { fi: 'Toinen suomenkielinen' } },
+        { oid: 'hk-1', nimi: { fi: 'Suomenkielinen hakukohde' } },
+        { oid: 'hk-2', nimi: { fi: 'Toinen suomenkielinen' } },
       ];
       const result = (service as any).resolveHakukohteet(hakukohteet, resolveLang);
-      expect(JSON.stringify(result)).toBe(JSON.stringify(Prisma.JsonNull));
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe('Suomenkielinen hakukohde');
+      expect(result[1].name).toBe('Toinen suomenkielinen');
     });
 
     it('resolves hakukohteet with English names correctly', () => {
