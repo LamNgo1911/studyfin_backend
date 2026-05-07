@@ -293,7 +293,9 @@ export class SyncService {
           implementationData,
         } = result.value;
         targetsRaw.push(...hakukohteet);
-        implementationDataList.push(implementationData);
+        if (implementationData !== null) {
+          implementationDataList.push(implementationData);
+        }
         if (!enrichedDuration && toteutusDuration) {
           enrichedDuration = toteutusDuration;
         }
