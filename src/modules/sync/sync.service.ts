@@ -268,8 +268,50 @@ export class SyncService {
 
     const teachingLanguages: string[] = detail.kielivalinta ?? [];
 
-    const duration: string | null = detail.kesto ?? null;
-    const resolvedHakukohteet = this.resolveHakukohteet(detail.hakukohteet, resolveLang);
+    const toteutusOids: string[] = (detail.toteutukset ?? [])
+      .map((t: any) => t.oid)
+      .filter(Boolean);
+    const valintaperusteCache = new Map<string, any>();
+
+    // Enrich each toteutus via /toteutus/{oid}
+    const toteutusResults = await Promise.allSettled(
+      toteutusOids.map((oid) =>
+        this.enrichToteutus(oid, resolveLang, valintaperusteCache),
+      ),
+    );
+
+    // Flatten all hakukohteet from successful toteutus enrichments
+    const targetsRaw: any[] = [];
+    const implementationDataList: any[] = [];
+    let enrichedDuration: string | null = null;
+
+    for (const result of toteutusResults) {
+      if (result.status === 'fulfilled') {
+        const {
+          hakukohteet,
+          duration: toteutusDuration,
+          implementationData,
+        } = result.value;
+        targetsRaw.push(...hakukohteet);
+        implementationDataList.push(implementationData);
+        if (!enrichedDuration && toteutusDuration) {
+          enrichedDuration = toteutusDuration;
+        }
+      }
+    }
+
+    const resolvedTargets = await this.resolveApplicationTargets(
+      targetsRaw,
+      resolveLang,
+      valintaperusteCache,
+    );
+
+    const duration: string | null = enrichedDuration ?? detail.kesto ?? null;
+
+    const implementations: Prisma.InputJsonValue | typeof Prisma.JsonNull =
+      implementationDataList.length > 0
+        ? (implementationDataList as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull;
 
     const eqfLevel: string | null = (detail.eqf ?? [])[0]?.koodiUri ?? null;
     const nqfLevel: string | null = (detail.nqf ?? [])[0]?.koodiUri ?? null;
@@ -294,11 +336,8 @@ export class SyncService {
         fieldOfStudy,
         degreeTitles,
         teachingLanguages,
-        implementations: this.resolveImplementations(
-          detail.toteutukset,
-          resolveLang,
-        ),
-        hakukohteet: resolvedHakukohteet,
+        implementations,
+        applicationTargets: resolvedTargets,
         duration,
         syncedAt,
       },
@@ -317,11 +356,8 @@ export class SyncService {
         fieldOfStudy,
         degreeTitles,
         teachingLanguages,
-        implementations: this.resolveImplementations(
-          detail.toteutukset,
-          resolveLang,
-        ),
-        hakukohteet: this.resolveHakukohteet(detail.hakukohteet, resolveLang),
+        implementations,
+        applicationTargets: resolvedTargets,
         duration,
         syncedAt,
       },
@@ -372,44 +408,167 @@ export class SyncService {
     }
   }
 
-  private resolveImplementations(
-    toteutukset: any[] | null | undefined,
+  private async enrichToteutus(
+    toteutusOid: string,
     resolveLang: (obj: any) => string,
-  ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
-    if (!Array.isArray(toteutukset)) return Prisma.JsonNull;
-    const englishOnly = toteutukset.filter((t: any) => t.nimi?.en);
-    if (englishOnly.length === 0) return Prisma.JsonNull;
-    return englishOnly.map((t: any) => ({
-      oid: t.oid,
-      name: resolveLang(t.nimi),
-      providers: (t.tarjoajat ?? []).map((p: any) => ({
-        oid: p.oid,
-        name: resolveLang(p.nimi),
-        municipality: resolveLang(p.paikkakunta?.nimi),
-      })),
-    }));
+    valintaperusteCache: Map<string, any>,
+  ): Promise<{
+    hakukohteet: any[];
+    duration: string | null;
+    implementationData: any;
+  }> {
+    try {
+      const resp = await firstValueFrom(
+        this.httpService.get(`${OPINTOPOLKU_BASE}/toteutus/${toteutusOid}`),
+      );
+      const data = resp.data ?? {};
+
+      // --- Hakukohteet ---
+      const seenOids = new Set<string>();
+      const hakukohteet: any[] = [];
+      for (const ht of data.hakutiedot ?? []) {
+        const hakuajat = ht.hakuajat ?? [];
+        for (const hk of ht.hakukohteet ?? []) {
+          if (hk.oid && !seenOids.has(hk.oid)) {
+            seenOids.add(hk.oid);
+            hk._haku = { hakuajat, nimi: ht.nimi };
+            hakukohteet.push(hk);
+          }
+        }
+      }
+
+      // --- Duration ---
+      const duration: string | null =
+        resolveLang(data.metadata?.opetus?.suunniteltuKestoKuvaus) || null;
+
+      // --- Implementation data ---
+      const opetus = data.metadata?.opetus ?? {};
+      const implementationData = {
+        oid: data.oid,
+        name: resolveLang(data.nimi),
+        providers: (data.tarjoajat ?? []).map((p: any) => ({
+          oid: p.oid,
+          name: resolveLang(p.nimi),
+          municipality: resolveLang(p.paikkakunta?.nimi),
+        })),
+        studyMode: (opetus.opetustapa ?? []).map((t: any) =>
+          resolveLang(t.nimi),
+        ),
+        studyTime: (opetus.opetusaika ?? []).map((t: any) =>
+          resolveLang(t.nimi),
+        ),
+        teachingLanguages: (opetus.opetuskieli ?? []).map((t: any) =>
+          resolveLang(t.nimi),
+        ),
+        tuitionFee: opetus.maksunMaara ?? null,
+        tuitionCurrency: opetus.maksunMaara ? 'EUR' : null,
+        scholarshipAmount: opetus.apuraha?.min ?? opetus.apuraha?.max ?? null,
+        scholarshipInfo:
+          opetus.apuraha?.min != null && opetus.apuraha?.max != null
+            ? `${opetus.apuraha.min}–${opetus.apuraha.max} EUR`
+            : null,
+        tuitionFeeDescription: resolveLang(opetus.maksullisuusKuvaus) || null,
+        teachingMethodDescription: resolveLang(opetus.opetustapaKuvaus) || null,
+        teachingLanguageDescription:
+          resolveLang(opetus.opetuskieletKuvaus) || null,
+        scholarshipDescription: resolveLang(opetus.apuraha?.kuvaus) || null,
+        durationYears: opetus.suunniteltuKestoVuodet ?? null,
+        startPlaces: opetus.aloituspaikat?.lukumaara ?? null,
+        additionalInfo: (opetus.lisatiedot ?? []).map((i: any) => ({
+          title: resolveLang(i.otsikko?.nimi),
+          text: resolveLang(i.teksti),
+        })),
+        contactPersons: (data.yhteyshenkilot ?? []).map((c: any) => ({
+          name: resolveLang(c.nimi),
+          title: resolveLang(c.titteli),
+          email: resolveLang(c.sahkoposti),
+        })),
+        hakuAuki: data.hakuAuki ?? false,
+      };
+
+      return { hakukohteet, duration, implementationData };
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Could not fetch /toteutus/${toteutusOid}: ${msg}`);
+      return { hakukohteet: [], duration: null, implementationData: null };
+    }
   }
 
-  private resolveHakukohteet(
-    hakukohteet: any[] | null | undefined,
+  private async fetchValintaperuste(
+    vpId: string,
     resolveLang: (obj: any) => string,
-  ): Prisma.InputJsonValue | typeof Prisma.JsonNull {
-    if (!Array.isArray(hakukohteet) || hakukohteet.length === 0)
-      return Prisma.JsonNull;
-    return hakukohteet.map((h: any) => ({
-      oid: h.oid,
-      name: resolveLang(h.nimi),
-      applicationPeriod: {
-        start: h.hakuaika?.alkaa ?? null,
-        end: h.hakuaika?.paattyy ?? null,
-      },
-      requiredEducation:
-        resolveLang(h.pohjakoulutusvaatimukset?.[0]?.nimi) || null,
-      admissionCriteriaOid: h.valintapere?.oid ?? null,
-      applicationFormUrl:
-        h.linkit?.find((l: any) => l.tyyppi === 'hakulomake')?.href ?? null,
-      implementationOids: h.kaytetytToteutusOid ?? [],
-    }));
+    cache: Map<string, any>,
+  ): Promise<any | null> {
+    if (!vpId) return null;
+    if (cache.has(vpId)) return cache.get(vpId);
+    try {
+      const resp = await firstValueFrom(
+        this.httpService.get(`${OPINTOPOLKU_BASE}/valintaperuste/${vpId}`),
+      );
+      const vp = resp.data;
+      const enriched = {
+        id: vp.id ?? null,
+        name: resolveLang(vp.nimi),
+        selectionMethods: (vp.metadata?.valintatavat ?? []).map((vt: any) => ({
+          name: resolveLang(vt.nimi),
+          type: vt.valintatapa?.koodiUri ?? null,
+          description: resolveLang(vt.sisalto?.[0]?.data) || null,
+          thresholdCondition: vt.kynnysehto ? resolveLang(vt.kynnysehto) : null,
+        })),
+        eligibilityCriteria: resolveLang(vp.metadata?.hakukelpoisuus) || null,
+        additionalInfo: resolveLang(vp.metadata?.lisatiedot) || null,
+        entranceExams: vp.valintakokeet ?? [],
+      };
+      cache.set(vpId, enriched);
+      return enriched;
+    } catch {
+      this.logger.warn(`Could not fetch valintaperuste ${vpId}`);
+      cache.set(vpId, null);
+      return null;
+    }
+  }
+
+  private async resolveApplicationTargets(
+    targets: any[] | null | undefined,
+    resolveLang: (obj: any) => string,
+    valintaperusteCache: Map<string, any>,
+  ): Promise<Prisma.InputJsonValue | typeof Prisma.JsonNull> {
+    if (!Array.isArray(targets) || targets.length === 0) return Prisma.JsonNull;
+    const results = await Promise.all(
+      targets.map(async (h: any) => {
+        const vpId: string | null = h.valintaperusteId ?? null;
+        const valintaperuste = vpId
+          ? await this.fetchValintaperuste(
+              vpId,
+              resolveLang,
+              valintaperusteCache,
+            )
+          : null;
+        return {
+          oid: h.oid,
+          name: resolveLang(h.nimi),
+          applicationPeriod: {
+            start: h.hakuaika?.alkaa ?? h._haku?.hakuajat?.[0]?.alkaa ?? null,
+            end: h.hakuaika?.paattyy ?? h._haku?.hakuajat?.[0]?.paattyy ?? null,
+          },
+          requiredEducation:
+            resolveLang(h.pohjakoulutusvaatimukset?.[0]?.nimi) || null,
+          admissionCriteriaOid: h.valintapere?.oid ?? null,
+          applicationFormUrl:
+            (h.linkit?.find((l: any) => l.tyyppi === 'hakulomake')?.href ??
+              resolveLang(h._haku?.hakulomakeLinkki)) ||
+            null,
+          implementationOids: h.toteutusOid
+            ? [h.toteutusOid]
+            : (h.kaytetytToteutusOid ?? []),
+          valintaperusteId: vpId,
+          toteutusOid: h.toteutusOid ?? null,
+          hakuOid: h.hakuOid ?? null,
+          valintaperuste,
+        };
+      }),
+    );
+    return results;
   }
 
   private isEnglishTaught(data: any): boolean {

@@ -20,7 +20,12 @@ const mockSavedProgram = {
   programId: 'prog-1',
   status: 'interested',
   createdAt: new Date('2026-01-01'),
-  program: { name: 'CS Program', oid: 'oid-1', type: 'yo', fieldOfStudy: 'Engineering' },
+  program: {
+    name: 'CS Program',
+    oid: 'oid-1',
+    type: 'yo',
+    fieldOfStudy: 'Engineering',
+  },
 };
 
 const mockPrisma = {
@@ -71,7 +76,9 @@ describe('UsersService', () => {
 
     it('throws NotFoundException when user not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      await expect(service.getProfile('missing-id')).rejects.toThrow(NotFoundException);
+      await expect(service.getProfile('missing-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -79,7 +86,10 @@ describe('UsersService', () => {
     it('updates firstName and lastName', async () => {
       const updated = { ...mockUser, firstName: 'Updated', lastName: 'Name' };
       mockPrisma.user.update.mockResolvedValue(updated);
-      const result = await service.updateProfile('user-1', { firstName: 'Updated', lastName: 'Name' });
+      const result = await service.updateProfile('user-1', {
+        firstName: 'Updated',
+        lastName: 'Name',
+      });
       expect(result.firstName).toBe('Updated');
       expect(result.lastName).toBe('Name');
     });
@@ -92,34 +102,49 @@ describe('UsersService', () => {
       const result = await service.saveProgram('user-1', 'prog-1');
       expect(result.status).toBe('interested');
       expect(mockPrisma.userProgram.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'interested' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'interested' }),
+        }),
       );
     });
 
     it('throws NotFoundException when program does not exist', async () => {
       mockPrisma.program.findUnique.mockResolvedValue(null);
-      await expect(service.saveProgram('user-1', 'bad-prog')).rejects.toThrow(NotFoundException);
+      await expect(service.saveProgram('user-1', 'bad-prog')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws ConflictException when program already saved', async () => {
       mockPrisma.program.findUnique.mockResolvedValue({ id: 'prog-1' });
       mockPrisma.userProgram.create.mockRejectedValue({ code: 'P2002' });
-      await expect(service.saveProgram('user-1', 'prog-1')).rejects.toThrow(ConflictException);
+      await expect(service.saveProgram('user-1', 'prog-1')).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
   describe('updateSavedProgramStatus', () => {
     it('updates status when record exists', async () => {
       mockPrisma.userProgram.findUnique.mockResolvedValue(mockSavedProgram);
-      mockPrisma.userProgram.update.mockResolvedValue({ ...mockSavedProgram, status: 'applying' });
-      const result = await service.updateSavedProgramStatus('user-1', 'prog-1', { status: 'applying' });
+      mockPrisma.userProgram.update.mockResolvedValue({
+        ...mockSavedProgram,
+        status: 'applying',
+      });
+      const result = await service.updateSavedProgramStatus(
+        'user-1',
+        'prog-1',
+        { status: 'applying' },
+      );
       expect(result.status).toBe('applying');
     });
 
     it('throws NotFoundException when saved program not found', async () => {
       mockPrisma.userProgram.findUnique.mockResolvedValue(null);
       await expect(
-        service.updateSavedProgramStatus('user-1', 'bad-prog', { status: 'applying' }),
+        service.updateSavedProgramStatus('user-1', 'bad-prog', {
+          status: 'applying',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -128,13 +153,17 @@ describe('UsersService', () => {
     it('deletes the saved program', async () => {
       mockPrisma.userProgram.findUnique.mockResolvedValue(mockSavedProgram);
       mockPrisma.userProgram.delete.mockResolvedValue(mockSavedProgram);
-      await expect(service.removeSavedProgram('user-1', 'prog-1')).resolves.toBeUndefined();
+      await expect(
+        service.removeSavedProgram('user-1', 'prog-1'),
+      ).resolves.toBeUndefined();
       expect(mockPrisma.userProgram.delete).toHaveBeenCalled();
     });
 
     it('throws NotFoundException when saved program not found', async () => {
       mockPrisma.userProgram.findUnique.mockResolvedValue(null);
-      await expect(service.removeSavedProgram('user-1', 'bad-prog')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.removeSavedProgram('user-1', 'bad-prog'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -144,7 +173,9 @@ describe('UsersService', () => {
       const result = await service.listSavedPrograms('user-1', {});
       expect(result).toHaveLength(1);
       expect(mockPrisma.userProgram.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ userId: 'user-1' }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: 'user-1' }),
+        }),
       );
     });
 
@@ -153,7 +184,10 @@ describe('UsersService', () => {
       await service.listSavedPrograms('user-1', { status: 'interested' });
       expect(mockPrisma.userProgram.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ userId: 'user-1', status: 'interested' }),
+          where: expect.objectContaining({
+            userId: 'user-1',
+            status: 'interested',
+          }),
         }),
       );
     });

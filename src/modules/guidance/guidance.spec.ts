@@ -87,23 +87,30 @@ describe('GuidanceService', () => {
     it('throws NotFoundException when program does not exist', async () => {
       prisma.program.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.findByProgramOid('unknown-oid'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findByProgramOid('unknown-oid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('upsert()', () => {
     const dto = {
       sections: [
-        { key: 'application-process', title: 'Application Process', body: 'Apply via Studyinfo.', order: 1 },
+        {
+          key: 'application-process',
+          title: 'Application Process',
+          body: 'Apply via Studyinfo.',
+          order: 1,
+        },
       ],
     };
 
     it('throws NotFoundException when programOid does not exist', async () => {
       prisma.program.findUnique.mockResolvedValue(null);
 
-      await expect(service.upsert('unknown-oid', dto as any)).rejects.toThrow(NotFoundException);
+      await expect(service.upsert('unknown-oid', dto as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('deletes existing sections and creates new ones atomically', async () => {
@@ -129,29 +136,47 @@ describe('GuidanceService', () => {
   describe('patch()', () => {
     const dto = {
       sections: [
-        { key: 'application-process', title: 'Updated Title', body: 'Updated body.', order: 2 },
+        {
+          key: 'application-process',
+          title: 'Updated Title',
+          body: 'Updated body.',
+          order: 2,
+        },
       ],
     };
 
     it('throws NotFoundException when programOid does not exist', async () => {
       prisma.program.findUnique.mockResolvedValue(null);
 
-      await expect(service.patch('unknown-oid', dto as any)).rejects.toThrow(NotFoundException);
+      await expect(service.patch('unknown-oid', dto as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('upserts provided sections and returns all sections sorted by order', async () => {
       prisma.program.findUnique.mockResolvedValue({ oid: 'prog-oid-123' });
       // $transaction uses interactive (callback-based) form for patch
       prisma.$transaction.mockImplementation(async (fn: any) => fn(prisma));
-      prisma.guidanceSection.upsert.mockResolvedValue({ ...mockSection, title: 'Updated Title', order: 2 });
+      prisma.guidanceSection.upsert.mockResolvedValue({
+        ...mockSection,
+        title: 'Updated Title',
+        order: 2,
+      });
       prisma.guidanceSection.deleteMany.mockResolvedValue({ count: 0 });
-      prisma.guidanceSection.findMany.mockResolvedValue([{ ...mockSection, title: 'Updated Title', order: 2 }]);
+      prisma.guidanceSection.findMany.mockResolvedValue([
+        { ...mockSection, title: 'Updated Title', order: 2 },
+      ]);
 
       const result = await service.patch('prog-oid-123', dto as any);
 
       expect(prisma.guidanceSection.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { programOid_key: { programOid: 'prog-oid-123', key: 'application-process' } },
+          where: {
+            programOid_key: {
+              programOid: 'prog-oid-123',
+              key: 'application-process',
+            },
+          },
         }),
       );
       expect(result[0].title).toBe('Updated Title');

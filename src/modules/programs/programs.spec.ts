@@ -15,7 +15,14 @@ const mockProgramRow = {
   creditsUnit: 'ECTS credits',
   teachingLanguages: ['en'],
   universities: [
-    { university: { oid: 'uni-oid-1', name: 'Aalto University', nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University' }, descriptionMultilingual: { fi: 'Kuvaus', en: 'Description' } } },
+    {
+      university: {
+        oid: 'uni-oid-1',
+        name: 'Aalto University',
+        nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University' },
+        descriptionMultilingual: { fi: 'Kuvaus', en: 'Description' },
+      },
+    },
   ],
 };
 
@@ -27,14 +34,18 @@ const mockProgramDetailRow = {
   nqfLevel: 'nqf_6',
   degreeTitles: ['Bachelor of Science'],
   implementations: [{ oid: 'impl-oid', name: 'CS implementation' }],
-  hakukohteet: [
+  applicationTargets: [
     {
       oid: 'hakukohde-oid-1',
       name: 'Application Group 1',
-      applicationPeriod: { start: '2025-01-01T00:00:00Z', end: '2025-03-15T23:59:59Z' },
+      applicationPeriod: {
+        start: '2025-01-01T00:00:00Z',
+        end: '2025-03-15T23:59:59Z',
+      },
       requiredEducation: 'General upper secondary school',
       admissionCriteriaOid: 'valintaperuste-oid-1',
-      applicationFormUrl: 'https://opintopolku.fi/app/hakulomake/hakukohde-oid-1',
+      applicationFormUrl:
+        'https://opintopolku.fi/app/hakulomake/hakukohde-oid-1',
       implementationOids: ['impl-oid'],
     },
   ],
@@ -130,7 +141,9 @@ describe('ProgramsService', () => {
       expect(result.implementations).toEqual([
         { oid: 'impl-oid', name: 'CS implementation' },
       ]);
-      expect(result.hakukohteet).toEqual(mockProgramDetailRow.hakukohteet);
+      expect(result.applicationTargets).toEqual(
+        mockProgramDetailRow.applicationTargets,
+      );
       expect(result.duration).toBe('3 years');
       expect(result.universities[0].oid).toBe('uni-oid-1');
       expect(result.universities[0].name).toBe('Aalto University');
@@ -147,17 +160,17 @@ describe('ProgramsService', () => {
       );
     });
 
-    it('returns null hakukohteet and duration when not present in DB', async () => {
-      const rowWithoutHakukohteet = {
+    it('returns null applicationTargets and duration when not present in DB', async () => {
+      const rowWithoutTargets = {
         ...mockProgramDetailRow,
-        hakukohteet: undefined,
+        applicationTargets: undefined,
         duration: undefined,
       };
-      prisma.program.findUnique.mockResolvedValue(rowWithoutHakukohteet);
+      prisma.program.findUnique.mockResolvedValue(rowWithoutTargets);
 
       const result = await service.findOne('prog-oid-1');
 
-      expect(result.hakukohteet).toBeNull();
+      expect(result.applicationTargets).toBeNull();
       expect(result.duration).toBeNull();
     });
   });

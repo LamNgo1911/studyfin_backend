@@ -17,13 +17,24 @@ export class ProgramsService {
 
     const rawSize = Number(query.size);
     const rawPage = Number(query.page);
-    const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
-    const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
+    const size =
+      Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
+    const page =
+      Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
 
     const allRows = await this.prisma.program.findMany({
       include: {
         universities: {
-          include: { university: { select: { oid: true, name: true, nameMultilingual: true, descriptionMultilingual: true } } },
+          include: {
+            university: {
+              select: {
+                oid: true,
+                name: true,
+                nameMultilingual: true,
+                descriptionMultilingual: true,
+              },
+            },
+          },
         },
       },
     });
@@ -55,7 +66,16 @@ export class ProgramsService {
       where: { oid },
       include: {
         universities: {
-          include: { university: { select: { oid: true, name: true, nameMultilingual: true, descriptionMultilingual: true } } },
+          include: {
+            university: {
+              select: {
+                oid: true,
+                name: true,
+                nameMultilingual: true,
+                descriptionMultilingual: true,
+              },
+            },
+          },
         },
         _count: { select: { guidanceSections: true } },
       },
@@ -72,9 +92,11 @@ export class ProgramsService {
 
   private hasEnglish(row: any): boolean {
     const name = row.nameMultilingual;
-    if (name == null || typeof name !== 'object' || !('en' in name)) return false;
+    if (name == null || typeof name !== 'object' || !('en' in name))
+      return false;
     const desc = row.descriptionMultilingual;
-    if (desc == null || typeof desc !== 'object' || !('en' in desc)) return false;
+    if (desc == null || typeof desc !== 'object' || !('en' in desc))
+      return false;
     return true;
   }
 
@@ -106,7 +128,9 @@ export class ProgramsService {
         .filter((pu: any) => this.hasEnglish(pu.university))
         .map((pu: any) => ({
           oid: pu.university.oid,
-          name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
+          name: this.resolveLang(
+            pu.university.nameMultilingual ?? pu.university.name,
+          ),
         })),
     };
   }
@@ -128,14 +152,16 @@ export class ProgramsService {
       degreeTitles: row.degreeTitles ?? [],
       teachingLanguages: row.teachingLanguages ?? [],
       implementations: row.implementations ?? null,
-      hakukohteet: row.hakukohteet ?? null,
+      applicationTargets: row.applicationTargets ?? null,
       duration: row.duration ?? null,
       hasGuidance: (row._count?.guidanceSections ?? 0) > 0,
       universities: (row.universities ?? [])
         .filter((pu: any) => this.hasEnglish(pu.university))
         .map((pu: any) => ({
           oid: pu.university.oid,
-          name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
+          name: this.resolveLang(
+            pu.university.nameMultilingual ?? pu.university.name,
+          ),
         })),
     };
   }

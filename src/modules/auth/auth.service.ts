@@ -143,7 +143,9 @@ export class AuthService {
       );
 
       // Log reset token (in production, this would be sent via email)
-      console.log(`[Auth] Password reset token for ${user.email}: ${resetToken}`);
+      console.log(
+        `[Auth] Password reset token for ${user.email}: ${resetToken}`,
+      );
     }
 
     return {

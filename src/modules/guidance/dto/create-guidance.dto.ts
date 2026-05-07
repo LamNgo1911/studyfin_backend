@@ -4,7 +4,10 @@ import { ArrayMinSize, IsArray, ValidateNested } from 'class-validator';
 import { GuidanceSectionDto } from './guidance-section.dto';
 
 export class CreateGuidanceDto {
-  @ApiProperty({ type: [GuidanceSectionDto], description: 'Guidance sections to create/replace' })
+  @ApiProperty({
+    type: [GuidanceSectionDto],
+    description: 'Guidance sections to create/replace',
+  })
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

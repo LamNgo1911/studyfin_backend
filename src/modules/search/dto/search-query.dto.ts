@@ -8,12 +8,18 @@ export class UnifiedSearchQueryDto {
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ enum: ['programs', 'institutions'], description: 'Filter to only programs or only institutions. Omit for both.' })
+  @ApiPropertyOptional({
+    enum: ['programs', 'institutions'],
+    description: 'Filter to only programs or only institutions. Omit for both.',
+  })
   @IsOptional()
   @IsIn(['programs', 'institutions'])
   type?: 'programs' | 'institutions';
 
-  @ApiPropertyOptional({ default: 20, description: 'Results per page (max 100)' })
+  @ApiPropertyOptional({
+    default: 20,
+    description: 'Results per page (max 100)',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

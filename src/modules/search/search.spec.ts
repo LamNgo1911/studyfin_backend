@@ -7,9 +7,16 @@ const mockUniversityRow = {
   oid: '1.2.246.562.10.56753942459',
   id: 'uni-1',
   name: 'Aalto University',
-  nameMultilingual: { fi: 'Aalto-yliopisto', en: 'Aalto University', sv: 'Aalto-universitetet' },
+  nameMultilingual: {
+    fi: 'Aalto-yliopisto',
+    en: 'Aalto University',
+    sv: 'Aalto-universitetet',
+  },
   description: 'A great university',
-  descriptionMultilingual: { fi: 'Mahtava yliopisto', en: 'A great university' },
+  descriptionMultilingual: {
+    fi: 'Mahtava yliopisto',
+    en: 'A great university',
+  },
   logoUrl: 'https://example.com/logo.png',
   type: 'yo',
   municipality: 'Helsinki',
@@ -93,7 +100,9 @@ describe('SearchService', () => {
       expect(result.hits[0].type).toBe('program');
       expect(result.hits[0].name).toBe('Computer Science');
       expect(result.hits[0].providers).toHaveLength(1);
-      expect(result.hits[0].providers![0].oid).toBe('1.2.246.562.10.56753942459');
+      expect(result.hits[0].providers![0].oid).toBe(
+        '1.2.246.562.10.56753942459',
+      );
     });
   });
 

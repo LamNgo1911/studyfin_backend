@@ -21,15 +21,21 @@ import { AdminModule } from './modules/admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-      name: 'default',
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+        name: 'default',
+      },
+    ]),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: (configService: ConfigService) => ({
-        stores: [new KeyvRedis(configService.get('REDIS_URL', 'redis://localhost:6379'))],
+        stores: [
+          new KeyvRedis(
+            configService.get('REDIS_URL', 'redis://localhost:6379'),
+          ),
+        ],
         ttl: 24 * 60 * 60 * 1000, // 24h default
       }),
       inject: [ConfigService],
@@ -47,9 +53,6 @@ import { AdminModule } from './modules/admin/admin.module';
     AdminModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

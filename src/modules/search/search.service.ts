@@ -34,33 +34,67 @@ export class SearchService {
     if (cached) return cached;
 
     // Program-specific where with full-text search when q is provided
-    const progWhere = q
-      ? { name: { search: q } }
-      : {};
+    const progWhere = q ? { name: { search: q } } : {};
 
     // University-specific where with full-text search when q is provided
-    const uniWhere = q
-      ? { name: { search: q } }
-      : {};
+    const uniWhere = q ? { name: { search: q } } : {};
 
     // Relevance ordering when q is provided, alphabetical otherwise
     const progOrderBy = q
-      ? [{ _relevance: { search: q, fields: ['name', 'description'] as const, sort: 'desc' as const } }]
+      ? [
+          {
+            _relevance: {
+              search: q,
+              fields: ['name', 'description'] as const,
+              sort: 'desc' as const,
+            },
+          },
+        ]
       : [{ name: 'asc' as const }];
 
     const uniOrderBy = q
-      ? [{ _relevance: { search: q, fields: ['name', 'description'] as const, sort: 'desc' as const } }]
+      ? [
+          {
+            _relevance: {
+              search: q,
+              fields: ['name', 'description'] as const,
+              sort: 'desc' as const,
+            },
+          },
+        ]
       : [{ name: 'asc' as const }];
 
-    let result: { total: number; page: number; size: number; hits: SearchHitDto[] };
+    let result: {
+      total: number;
+      page: number;
+      size: number;
+      hits: SearchHitDto[];
+    };
 
     if (type === 'programs') {
-      result = await this.searchProgramsOnly(progWhere, progOrderBy, page, size);
+      result = await this.searchProgramsOnly(
+        progWhere,
+        progOrderBy,
+        page,
+        size,
+      );
     } else if (type === 'institutions') {
-      result = await this.searchInstitutionsOnly(uniWhere, uniOrderBy, page, size);
+      result = await this.searchInstitutionsOnly(
+        uniWhere,
+        uniOrderBy,
+        page,
+        size,
+      );
     } else {
       // Mixed: query both types, merge with relevance-first ordering
-      result = await this.searchMixed(progWhere, uniWhere, progOrderBy, uniOrderBy, page, size);
+      result = await this.searchMixed(
+        progWhere,
+        uniWhere,
+        progOrderBy,
+        uniOrderBy,
+        page,
+        size,
+      );
     }
 
     await this.cacheManager.set(cacheKey, result, 24 * 60 * 60 * 1000);
@@ -159,7 +193,9 @@ export class SearchService {
     // Filter to only items with English university content.
     const progHits = programs
       .filter((p: any) =>
-        (p.universities ?? []).some((pu: any) => this.hasEnglish(pu.university)),
+        (p.universities ?? []).some((pu: any) =>
+          this.hasEnglish(pu.university),
+        ),
       )
       .map((p) => this.mapProgramHit(p));
     const uniHits = universities
@@ -175,9 +211,11 @@ export class SearchService {
 
   private hasEnglish(row: any): boolean {
     const name = row.nameMultilingual;
-    if (name == null || typeof name !== 'object' || !('en' in name)) return false;
+    if (name == null || typeof name !== 'object' || !('en' in name))
+      return false;
     const desc = row.descriptionMultilingual;
-    if (desc == null || typeof desc !== 'object' || !('en' in desc)) return false;
+    if (desc == null || typeof desc !== 'object' || !('en' in desc))
+      return false;
     return true;
   }
 
@@ -210,7 +248,9 @@ export class SearchService {
         .filter((pu: any) => this.hasEnglish(pu.university))
         .map((pu: any) => ({
           oid: pu.university.oid,
-          name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name),
+          name: this.resolveLang(
+            pu.university.nameMultilingual ?? pu.university.name,
+          ),
           locations: (pu.university.locations ?? []).map((l: any) => ({
             code: l.code,
             name: l.name,
@@ -223,7 +263,9 @@ export class SearchService {
     return {
       oid: row.oid,
       name: this.resolveLang(row.nameMultilingual ?? row.name),
-      description: this.resolveLang(row.descriptionMultilingual ?? row.description) ?? undefined,
+      description:
+        this.resolveLang(row.descriptionMultilingual ?? row.description) ??
+        undefined,
       type: 'institution',
       itemType: row.type,
       logoUrl: row.logoUrl ?? undefined,

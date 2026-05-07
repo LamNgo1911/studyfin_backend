@@ -65,7 +65,7 @@ model Program {
   degreeTitles    String[] // tutkintonimike names (English)
   teachingLanguages String[] // kielivalinta e.g. ["en", "fi"]
   implementations Json? // resolved toteutukset (English only)
-  hakukohteet     Json?       // resolved hakukohteet (application targets)
+  applicationTargets Json?   // resolved hakukohteet (application targets)
   duration        String?     // kesto from upstream (e.g. "3 years" or "5 years")
   syncedAt        DateTime
   createdAt       DateTime @default(now())

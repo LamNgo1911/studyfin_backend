@@ -17,22 +17,23 @@ export class UniversitiesService {
 
     const rawSize = Number(query.size);
     const rawPage = Number(query.page);
-    const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
-    const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
+    const size =
+      Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
+    const page =
+      Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
     const lng: string = query.lng ?? 'en';
 
-    const where =
-      query.language
-        ? {
-            programs: {
-              some: {
-                program: {
-                  teachingLanguages: { has: query.language },
-                },
+    const where = query.language
+      ? {
+          programs: {
+            some: {
+              program: {
+                teachingLanguages: { has: query.language },
               },
             },
-          }
-        : {};
+          },
+        }
+      : {};
 
     // Fetch all matching rows (no skip/take) so we can filter by English
     // content and then paginate the filtered set accurately.
@@ -80,8 +81,10 @@ export class UniversitiesService {
 
     const rawSize = Number(query.size);
     const rawPage = Number(query.page);
-    const size = Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
-    const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
+    const size =
+      Number.isFinite(rawSize) && rawSize > 0 ? Math.floor(rawSize) : 20;
+    const page =
+      Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0;
     const lng: string = query.lng ?? 'en';
 
     // Resolve university id from OID (needed for join filter)
@@ -102,7 +105,11 @@ export class UniversitiesService {
         take: size,
         include: {
           universities: {
-            include: { university: { select: { oid: true, name: true, nameMultilingual: true } } },
+            include: {
+              university: {
+                select: { oid: true, name: true, nameMultilingual: true },
+              },
+            },
           },
           _count: { select: { guidanceSections: true } },
         },
@@ -122,9 +129,11 @@ export class UniversitiesService {
 
   private hasEnglish(row: any): boolean {
     const name = row.nameMultilingual;
-    if (name == null || typeof name !== 'object' || !('en' in name)) return false;
+    if (name == null || typeof name !== 'object' || !('en' in name))
+      return false;
     const desc = row.descriptionMultilingual;
-    if (desc == null || typeof desc !== 'object' || !('en' in desc)) return false;
+    if (desc == null || typeof desc !== 'object' || !('en' in desc))
+      return false;
     return true;
   }
 
@@ -139,7 +148,9 @@ export class UniversitiesService {
     return {
       oid: row.oid,
       name: this.resolveLang(row.nameMultilingual ?? row.name, lng),
-      description: this.resolveLang(row.descriptionMultilingual ?? row.description, lng) ?? null,
+      description:
+        this.resolveLang(row.descriptionMultilingual ?? row.description, lng) ??
+        null,
       logoUrl: row.logoUrl ?? null,
       type: row.type ?? null,
       municipality: row.municipality ?? null,
@@ -173,7 +184,10 @@ export class UniversitiesService {
       hasGuidance: (row._count?.guidanceSections ?? 0) > 0,
       providers: (row.universities ?? []).map((pu: any) => ({
         oid: pu.university.oid,
-        name: this.resolveLang(pu.university.nameMultilingual ?? pu.university.name, lng),
+        name: this.resolveLang(
+          pu.university.nameMultilingual ?? pu.university.name,
+          lng,
+        ),
       })),
     };
   }

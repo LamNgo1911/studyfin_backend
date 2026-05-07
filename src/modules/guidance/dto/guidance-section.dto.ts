@@ -2,7 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class GuidanceSectionDto {
-  @ApiProperty({ description: 'Unique section key (e.g. application, visa, housing)' })
+  @ApiProperty({
+    description: 'Unique section key (e.g. application, visa, housing)',
+  })
   @IsString()
   @IsNotEmpty()
   key: string;

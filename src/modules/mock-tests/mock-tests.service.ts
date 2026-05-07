@@ -290,9 +290,7 @@ export class MockTestsService {
     );
     for (const [qId] of questionMap) {
       if (!answeredQuestionIds.has(qId)) {
-        throw new BadRequestException(
-          `Answer missing for question ${qId}`,
-        );
+        throw new BadRequestException(`Answer missing for question ${qId}`);
       }
     }
 

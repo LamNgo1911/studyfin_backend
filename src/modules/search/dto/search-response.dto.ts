@@ -63,22 +63,34 @@ export class SearchHitDto {
   type: 'program' | 'institution';
 
   // Type-specific fields — only populated when matching the discriminator
-  @ApiPropertyOptional({ description: 'Institution logo URL (institution type only)' })
+  @ApiPropertyOptional({
+    description: 'Institution logo URL (institution type only)',
+  })
   logoUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Institution municipality (institution type only)' })
+  @ApiPropertyOptional({
+    description: 'Institution municipality (institution type only)',
+  })
   municipality?: string;
 
-  @ApiPropertyOptional({ description: 'Institution website (institution type only)' })
+  @ApiPropertyOptional({
+    description: 'Institution website (institution type only)',
+  })
   website?: string;
 
-  @ApiPropertyOptional({ description: 'Institution email (institution type only)' })
+  @ApiPropertyOptional({
+    description: 'Institution email (institution type only)',
+  })
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Institution student count (institution type only)' })
+  @ApiPropertyOptional({
+    description: 'Institution student count (institution type only)',
+  })
   studentCount?: number;
 
-  @ApiPropertyOptional({ description: 'Institution locations (institution type only)' })
+  @ApiPropertyOptional({
+    description: 'Institution locations (institution type only)',
+  })
   locations?: { code: string; name: string }[];
 
   // Program-specific fields
@@ -88,7 +100,9 @@ export class SearchHitDto {
   @ApiProperty({ description: 'Item type code' })
   itemType: string;
 
-  @ApiPropertyOptional({ description: 'Whether this item is a degree (program type only)' })
+  @ApiPropertyOptional({
+    description: 'Whether this item is a degree (program type only)',
+  })
   isDegree?: boolean;
 
   @ApiPropertyOptional()
@@ -132,6 +146,9 @@ export class UnifiedSearchResponseDto {
   @ApiProperty({ description: 'Results per page' })
   size: number;
 
-  @ApiProperty({ type: [SearchHitDto], description: 'Array of program and institution results' })
+  @ApiProperty({
+    type: [SearchHitDto],
+    description: 'Array of program and institution results',
+  })
   hits: SearchHitDto[];
 }

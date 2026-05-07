@@ -34,10 +34,7 @@ describe('AdminService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AdminService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [AdminService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get(AdminService);
@@ -46,7 +43,10 @@ describe('AdminService', () => {
   describe('listUsers()', () => {
     it('returns paginated user list with total, page, size, and users', async () => {
       prisma.user.count.mockResolvedValue(2);
-      prisma.user.findMany.mockResolvedValue([mockUser, { ...mockUser, id: 'user-2', email: 'other@example.com' }]);
+      prisma.user.findMany.mockResolvedValue([
+        mockUser,
+        { ...mockUser, id: 'user-2', email: 'other@example.com' },
+      ]);
 
       const result = await service.listUsers({ page: 0, size: 20 });
 

@@ -30,14 +30,26 @@ describe('AdminController', () => {
 
       const result = await controller.listUsers({ page: 0, size: 20 });
 
-      expect(adminService.listUsers).toHaveBeenCalledWith({ page: 0, size: 20 });
+      expect(adminService.listUsers).toHaveBeenCalledWith({
+        page: 0,
+        size: 20,
+      });
       expect(result).toEqual(expected);
     });
 
     it('passes email filter to adminService.listUsers', async () => {
-      adminService.listUsers.mockResolvedValue({ total: 0, page: 0, size: 20, users: [] });
+      adminService.listUsers.mockResolvedValue({
+        total: 0,
+        page: 0,
+        size: 20,
+        users: [],
+      });
 
-      await controller.listUsers({ email: 'test@example.com', page: 0, size: 20 });
+      await controller.listUsers({
+        email: 'test@example.com',
+        page: 0,
+        size: 20,
+      });
 
       expect(adminService.listUsers).toHaveBeenCalledWith({
         email: 'test@example.com',
