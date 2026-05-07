@@ -380,10 +380,18 @@ export class SyncService {
             (provider.nimi?.en as string) ??
             (provider.nimi?.fi as string) ??
             providerOid,
+          nameMultilingual: provider.nimi ?? Prisma.JsonNull,
+          descriptionMultilingual: Prisma.JsonNull,
           type: '',
           syncedAt,
         },
-        update: {},
+        update: {
+          name:
+            (provider.nimi?.en as string) ??
+            (provider.nimi?.fi as string) ??
+            providerOid,
+          nameMultilingual: provider.nimi ?? Prisma.JsonNull,
+        },
       });
 
       const program = await this.prisma.program.findUnique({
@@ -426,14 +434,23 @@ export class SyncService {
       const data = resp.data ?? {};
 
       // --- Hakukohteet ---
+      // Normalize field names: /toteutus/{oid} uses different keys than /haku/{oid}
       const seenOids = new Set<string>();
       const hakukohteet: any[] = [];
       for (const ht of data.hakutiedot ?? []) {
-        const hakuajat = ht.hakuajat ?? [];
         for (const hk of ht.hakukohteet ?? []) {
-          if (hk.oid && !seenOids.has(hk.oid)) {
-            seenOids.add(hk.oid);
-            hk._haku = { hakuajat, nimi: ht.nimi };
+          const oid: string = (hk.hakukohdeOid ?? hk.oid ?? '') as string;
+          if (oid && !seenOids.has(oid)) {
+            seenOids.add(oid);
+            hk.oid = oid;
+            hk.hakuOid = ht.hakuOid;
+            hk.pohjakoulutusvaatimukset =
+              hk.pohjakoulutusvaatimukset ?? hk.pohjakoulutusvaatimus;
+            hk._haku = {
+              hakuajat: hk.hakuajat ?? ht.hakuajat ?? [],
+              nimi: ht.nimi,
+              hakulomakeLinkki: hk.hakulomakeLinkki ?? null,
+            };
             hakukohteet.push(hk);
           }
         }

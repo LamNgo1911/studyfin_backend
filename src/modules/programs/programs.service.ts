@@ -94,9 +94,6 @@ export class ProgramsService {
     const name = row.nameMultilingual;
     if (name == null || typeof name !== 'object' || !('en' in name))
       return false;
-    const desc = row.descriptionMultilingual;
-    if (desc == null || typeof desc !== 'object' || !('en' in desc))
-      return false;
     return true;
   }
 

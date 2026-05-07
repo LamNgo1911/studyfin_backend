@@ -200,6 +200,7 @@ describe('SyncService', () => {
       expect(result.hakukohteet[0]._haku).toEqual({
         hakuajat: [{ alkaa: '2025-01-01', paattyy: '2025-03-15' }],
         nimi: { en: 'Spring 2025' },
+        hakulomakeLinkki: null,
       });
     });
 
