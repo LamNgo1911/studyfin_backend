@@ -18,26 +18,26 @@
 
 ```
 src/
-├── common/                # Shared utilities
-│   ├── decorators/
+├── common/                # Shared code
+│   ├── decorators/        # @Roles, @CurrentUser param decorators
+│   ├── guards/            # JwtAuthGuard, RolesGuard
 │   ├── filters/
-│   ├── guards/
 │   ├── interceptors/
 │   ├── middleware/
 │   ├── pipes/
 │   └── utils/
-├── config/                # App configuration
+├── config/                # App configuration (Opintopolku API constants)
 ├── modules/
 │   ├── admin/             # Admin dashboard & user management
 │   ├── auth/              # JWT authentication
 │   ├── users/             # User profile & saved programs
-│   ├── universities/      # University data (cached)
-│   ├── programs/          # Study programs (cached)
+│   ├── universities/      # University data (cached, English-only)
+│   ├── programs/          # Study programs (cached, English-only)
 │   ├── guidance/          # A-Z guidance content per program
 │   ├── search/            # Unified full-text search (cached)
-│   ├── sync/              # DB sync from Opintopolku API (admin-only)
+│   ├── sync/              # DB sync from Opintopolku API (admin-only, daily cron)
 │   └── mock-tests/        # UAS entrance exam practice tests
-├── providers/             # External providers (PrismaService)
+├── providers/             # PrismaModule & PrismaService
 └── main.ts
 ```
 
@@ -87,18 +87,22 @@ The server starts at **http://localhost:3000** by default.
 
 ## Available Scripts
 
-| Script              | Description                       |
-|---------------------|-----------------------------------|
-| `npm run start`     | Start the app                     |
-| `npm run start:dev` | Start in watch mode               |
-| `npm run start:prod`| Start production build            |
-| `npm run build`     | Compile the project               |
-| `npm run lint`      | Lint & auto-fix with ESLint       |
-| `npm run format`    | Format code with Prettier         |
-| `npm test`          | Run unit tests                    |
-| `npm run test:watch`| Run tests in watch mode           |
-| `npm run test:cov`  | Run tests with coverage           |
-| `npm run test:e2e`  | Run end-to-end tests              |
+| Script                   | Description                       |
+|--------------------------|-----------------------------------|
+| `npm run start`          | Start the app                     |
+| `npm run start:dev`      | Start in watch mode               |
+| `npm run start:debug`    | Start in debug mode               |
+| `npm run start:prod`     | Start production build            |
+| `npm run build`          | Compile the project               |
+| `npm run lint`           | Lint & auto-fix with ESLint       |
+| `npm run format`         | Format code with Prettier         |
+| `npm test`               | Run unit tests                    |
+| `npm run test:watch`     | Run tests in watch mode           |
+| `npm run test:debug`     | Run tests in debug mode           |
+| `npm run test:cov`       | Run tests with coverage           |
+| `npm run test:e2e`       | Run end-to-end tests              |
+| `npm run seed:mock-tests`| Seed mock test templates          |
+| `npm run cleanup:programs`| Remove non-English programs from DB |
 
 ## API Routes
 
@@ -127,6 +131,51 @@ The server starts at **http://localhost:3000** by default.
 |--------|------|-------------|
 | `GET` | `/api/v1/programs` | List programs |
 | `GET` | `/api/v1/programs/:oid` | Program by OID |
+
+**Query parameters for `/programs`:**
+- `size` — results per page (1+, default: 20)
+- `page` — page number (0-indexed, default: 0)
+
+Only programs associated with universities that have English multilingual content are returned.
+
+**`GET /programs` response shape (list):**
+```json
+{
+  "total": 42,
+  "page": 0,
+  "size": 20,
+  "hits": [
+    {
+      "oid": "1.2.246.562.20.12345678901",
+      "name": "Computer Science (BSc)",
+      "type": "degree",
+      "isDegree": true,
+      "imageUrl": null,
+      "fieldOfStudy": "Computer Science",
+      "creditsAmount": 180,
+      "creditsUnit": "ects",
+      "teachingLanguages": ["en", "fi"],
+      "providers": [{ "oid": "...", "name": "Aalto University" }]
+    }
+  ]
+}
+```
+
+**`GET /programs/:oid` response shape (detail, includes all of the above plus):**
+```json
+{
+  "description": "...",
+  "typePath": "amk-tutkinto/tradenomi-tietojenkäsittely",
+  "eqfLevel": "6",
+  "nqfLevel": "6",
+  "degreeTitles": ["Bachelor of Business Administration"],
+  "implementations": [...],
+  "applicationTargets": [...],
+  "duration": { "years": 3.5, "months": 42 },
+  "hasGuidance": true,
+  "universities": [{ "oid": "...", "name": "University name" }]
+}
+```
 
 ### Search
 
@@ -160,17 +209,35 @@ Full-text search across programs and institutions in the local database.
       "website": "https://aalto.fi",
       "email": "info@aalto.fi",
       "studentCount": 15000,
-      "locations": [{ "code": "kunta_091", "name": "Helsinki" }]
+      "locations": [{ "code": "kunta_091", "name": "Helsinki" }],
+      "isDegree": false,
+      "degreeTitles": [],
+      "teachingLanguages": []
     },
     {
       "oid": "1.2.246.562.20.12345678901",
       "name": "Computer Science (BSc)",
+      "description": "...",
       "type": "program",
-      "itemType": "program",
+      "itemType": "degree",
+      "typePath": "amk-tutkinto/tradenomi-tietojenkäsittely",
       "isDegree": true,
+      "imageUrl": null,
+      "creditsAmount": 180,
+      "creditsUnit": "ects",
+      "eqfLevel": "6",
+      "nqfLevel": "6",
       "fieldOfStudy": "Computer Science",
+      "degreeTitles": ["Bachelor of Business Administration"],
       "teachingLanguages": ["en", "fi"],
-      "providers": [{ "oid": "...", "name": "Aalto University" }]
+      "implementations": [...],
+      "providers": [
+        {
+          "oid": "...",
+          "name": "Aalto University",
+          "locations": [{ "code": "kunta_091", "name": "Helsinki" }]
+        }
+      ]
     }
   ]
 }
@@ -256,6 +323,10 @@ Rate limits are enforced globally via `@nestjs/throttler`:
 | Auth routes (`/auth/*`) | 10 req | 60 sec |
 | Admin routes (`/admin/*`) | 30 req | 60 sec |
 
+## CORS
+
+CORS is enabled and configured via the `CORS_ORIGIN` environment variable (defaults to `*`). Supported methods: `GET`, `HEAD`, `PUT`, `PATCH`, `POST`, `DELETE`, `OPTIONS`. Credentials are allowed.
+
 ## API Modules
 
 ### Auth
@@ -264,19 +335,19 @@ JWT-based authentication with access and refresh tokens. Supports user registrat
 
 ### Search
 
-PostgreSQL full-text search across program names/descriptions and institution names/descriptions. Results are cached in Redis (24h TTL). Supports filtering by type (`programs` or `institutions`).
+PostgreSQL full-text search across program and institution names/descriptions (Prisma `fullTextSearchPostgres` preview feature). Results are cached in Redis (24h TTL). Supports filtering by type (`programs` or `institutions`). Mixed results (no type filter) return programs first, then institutions, limited to items with English multilingual university data.
 
 ### Users
 
-User profile management — view and update profile, save/manage programs with application status tracking.
+User profile management — view and update profile, save/manage programs with application status tracking (`interested`, `applied`, `accepted`, `rejected`).
 
 ### Universities
 
-University data served from local PostgreSQL with Redis cache-aside (24h TTL). Includes institution details, locations, and program associations.
+University data served from local PostgreSQL with Redis cache-aside (24h TTL). Includes institution details, locations, and program associations. Only universities with English multilingual content are returned.
 
 ### Programs
 
-Study program data served from local PostgreSQL with Redis cache-aside (24h TTL). Includes degree info, credits, teaching languages, and provider associations.
+Study program data served from local PostgreSQL with Redis cache-aside (24h TTL). Includes degree info, credits, teaching languages, duration, application targets, implementations, and provider university associations. Only programs associated with English-content universities are returned.
 
 ### Guidance
 
@@ -288,7 +359,7 @@ Administrative dashboard for user management. List users with optional email fil
 
 ### Sync
 
-Admin-triggered data sync from the Finnish national education API (Opintopolku). Fires-and-forgets: returns 202 Accepted immediately while sync runs in the background. Invalidates Redis caches after successful sync.
+Admin-triggered data sync from the Finnish national education API (Opintopolku). Fires-and-forgets: returns 202 Accepted immediately while sync runs in the background. Invalidates Redis caches after successful sync. Also runs automatically via a daily midnight cron job.
 
 ### Mock Tests
 
