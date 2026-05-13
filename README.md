@@ -177,6 +177,63 @@ Only programs associated with universities that have English multilingual conten
 }
 ```
 
+**Implementations and Application Targets**
+
+Program detail and search responses include `implementations` and `applicationTargets` arrays. These are resolved from the upstream Opintopolku `/toteutus/{oid}` endpoint during sync and stored as JSON on the `Program` model.
+
+**Implementation object shape:**
+```json
+{
+  "oid": "1.2.246.562.17.12345678901",
+  "name": "Bachelor's Programme in Computer Science",
+  "providers": [
+    { "oid": "1.2.246.562.10.12345678901", "name": "Aalto University", "municipality": "Espoo" }
+  ],
+  "studyMode": ["Daytime"],
+  "studyTime": ["Full-time"],
+  "teachingLanguages": ["Finnish", "English"],
+  "tuitionFee": null,
+  "tuitionCurrency": null,
+  "scholarshipAmount": null,
+  "scholarshipInfo": null,
+  "tuitionFeeDescription": null,
+  "teachingMethodDescription": null,
+  "teachingLanguageDescription": null,
+  "scholarshipDescription": null,
+  "durationYears": 3,
+  "startPlaces": 50,
+  "additionalInfo": [
+    { "title": "Admission info", "text": "..." }
+  ],
+  "contactPersons": [
+    { "name": "Jane Doe", "title": "Admissions Officer", "email": "admissions@aalto.fi" }
+  ],
+  "hakuAuki": true
+}
+```
+
+**Application Target object shape:**
+```json
+{
+  "oid": "1.2.246.562.20.98765432101",
+  "name": "Computer Science (BSc), Full-time studies",
+  "applicationPeriod": {
+    "start": "2025-01-08T08:00:00",
+    "end": "2025-01-22T15:00:00"
+  },
+  "requiredEducation": "Secondary education certificate",
+  "admissionCriteriaOid": "1.2.246.562.20.11111111111",
+  "applicationFormUrl": "https://studyinfo.fi/...",
+  "implementationOids": ["1.2.246.562.17.12345678901"],
+  "valintaperusteId": "v1",
+  "toteutusOid": "1.2.246.562.17.12345678901",
+  "hakuOid": "1.2.246.562.29.12345678901",
+  "valintaperuste": { ... }
+}
+```
+
+A program may have multiple implementations (e.g., full-time and part-time variants) and multiple application targets (different admission periods or quotas). Both arrays can be empty or `null` if upstream data is unavailable.
+
 ### Search
 
 Full-text search across programs and institutions in the local database.
