@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -17,6 +17,8 @@ import { PrismaModule } from './providers/prisma.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { GuidanceModule } from './modules/guidance/guidance.module';
 import { AdminModule } from './modules/admin/admin.module';
+// TEMP: Mock user middleware for testing without JWT auth
+import { MockUserMiddleware } from './common/middleware/mock-user.middleware';
 
 @Module({
   imports: [
@@ -55,4 +57,9 @@ import { AdminModule } from './modules/admin/admin.module';
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // TEMP: Inject mock user for testing without JWT auth
+    consumer.apply(MockUserMiddleware).forRoutes('*');
+  }
+}
