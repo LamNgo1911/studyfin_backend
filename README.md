@@ -312,6 +312,22 @@ Full-text search across programs and institutions in the local database.
 | `POST` | `/api/v1/auth/reset-password` | Reset password with token |
 | `GET` | `/api/v1/auth/me` | Get current user profile (requires auth) |
 
+### Users
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/v1/users/me` | Get current user profile (requires auth) |
+| `PATCH` | `/api/v1/users/me` | Update user profile fields (firstName, lastName) (requires auth) |
+| `POST` | `/api/v1/users/me/programs/:programId` | Save a program to user's list (requires auth) |
+| `GET` | `/api/v1/users/me/programs` | List saved programs (requires auth) |
+| `PATCH` | `/api/v1/users/me/programs/:programId` | Update saved program application status (requires auth) |
+| `DELETE` | `/api/v1/users/me/programs/:programId` | Remove a saved program — returns 204 (requires auth) |
+
+**Query parameters for `GET /users/me/programs`:**
+- `status` — filter by program status: `interested`, `applying`, `applied`, `accepted`, `rejected`
+- `size` — results per page (1–100, default: 20)
+- `page` — page number (0-indexed, default: 0)
+
 ### Sync
 
 Admin-only endpoint to populate the local database from the Opintopolku API.
@@ -366,6 +382,8 @@ Practice tests for UAS (Universities of Applied Sciences) entrance exams.
 
 JWT-based authentication using `@nestjs/passport` and `passport-jwt`. Routes marked _"requires auth"_ expect an `Authorization: Bearer <token>` header. Obtain a token via `POST /api/v1/auth/login`. Admin routes additionally require the user to have the `ADMIN` role (checked by `RolesGuard`).
 
+> **Note:** Auth guards (`JwtAuthGuard`, `RolesGuard`) are temporarily disabled for testing. A `MockUserMiddleware` injects a hardcoded admin user on every request instead. Restore the `@UseGuards` decorators in each controller and remove the mock middleware from `AppModule` before production deployment.
+
 ## API Docs (Swagger)
 
 Interactive Swagger UI available at **`/api/docs`** in development (`NODE_ENV !== 'production'`). Provides full endpoint documentation, request/response schemas, and in-browser testing. Disabled in production.
@@ -396,7 +414,7 @@ PostgreSQL full-text search across program and institution names/descriptions (P
 
 ### Users
 
-User profile management — view and update profile, save/manage programs with application status tracking (`interested`, `applied`, `accepted`, `rejected`).
+User profile management — view and update profile, save/manage programs with application status tracking (`interested`, `applying`, `applied`, `accepted`, `rejected`).
 
 ### Universities
 
